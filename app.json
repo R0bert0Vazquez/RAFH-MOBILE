@@ -1,29 +1,82 @@
 {
   "expo": {
-    "name": "RAFH-Movile",
-    "slug": "RAFH-Movile",
+    "name": "RAFH-Mobile",
+    "slug": "RAFH-Mobile",
     "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "orientation": "default",
+    "icon": "./assets/icon_rafh.png",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/icon_rafh.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#25A4D6"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "requireFullScreen": true,
+      "infoPlist": { // <-- AÑADIDO (Todo este bloque)
+        "NSAppTransportSecurity": {
+          "NSExceptionDomains": {
+            "192.168.100.77": { // <-- ¡¡RECUERDA CAMBIAR ESTO!!
+              "NSIncludesSubdomains": true,
+              "NSExceptionAllowsInsecureHTTPLoads": true
+            }
+          }
+        }
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/icon_rafh.png",
+        "backgroundColor": "#25A4D6"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.robert0_vazquez.RAFHMobile",
+      "usesCleartextTraffic": true
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/icon_rafh.png"
+    },
+    "plugins": [
+      // [
+      //   "expo-font",
+      //   {
+      //     "fonts": [
+      //       "./assets/fonts/Audiowide.ttf"
+      //     ],
+      //     "android": {
+      //       "fonts": [
+      //         {
+      //           "fontFamily": "Audiowide",
+      //           "fontDefinitions": [
+      //             {
+      //               "path": "./assets/fonts/Audiowide.ttf"
+      //             }
+      //           ]
+      //         }
+      //       ]
+      //     },
+      //     "ios": {
+      //       "fonts": [
+      //         "./assets/fonts/Audiowide.ttf"
+      //       ]
+      //     }
+      //   }
+      // ],
+      [
+        "expo-screen-orientation",
+        {
+          "initialOrientation": "DEFAULT"
+        }
+      ],
+      "expo-router"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "f91a31ff-8482-4e20-bc88-d0e13d52b80b"
+      }
     }
   }
 }
