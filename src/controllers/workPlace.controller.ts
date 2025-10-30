@@ -1,6 +1,6 @@
 import { Access_token, DashboardWorkPlace } from '@/src/models/types';
 
-const API_BASE_URL = 'http://192.168.100.77:8080/api';
+//const API_BASE_URL = 'http://192.168.3.33:8080/api';
 
 /**
  * @param credenciales - El token del usuario para solicitar la informacion del dashboard
@@ -11,14 +11,17 @@ export async function getDashboard(
   credenciales: Access_token,
 ): Promise<DashboardWorkPlace> {
   try {
-    const respuesta = await fetch(API_BASE_URL + '/dashboard', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        Authorization: `Bearer ${credenciales.access_token}`,
+    const respuesta = await fetch(
+      process.env.EXPO_PUBLIC_API_URL + '/dashboard',
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          Authorization: `Bearer ${credenciales.access_token}`,
+        },
       },
-    });
+    );
 
     if (respuesta.status === 401) {
       const errorWorkPlace = await respuesta.json();

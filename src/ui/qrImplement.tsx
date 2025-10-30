@@ -10,7 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import React, { useState } from 'react';
 
-export function QR() {
+export function QR({ navigation }) {
   const inset = useSafeAreaInsets();
   const [facing, setFacing] = useState<CameraType>('back');
   const [permission, requestPermission] = useCameraPermissions();
@@ -18,25 +18,46 @@ export function QR() {
   const [data, setData] = useState(null);
 
   if (!permission) {
-    // Camera permissions are still loading.
+    // Mientras se cargan los permisos
     return <View />;
   }
 
   if (!permission.granted) {
-    // Camera permissions are not granted yet.
+    // Si no hay permisos, pedirlos
     return (
       <View style={styles.container}>
         <Text style={styles.message}>
-          We need your permission to show the camera
+          Necesitamos tu permiso para acceder a la cámara
         </Text>
-        <Button onPress={requestPermission} title="grant permission" />
+        <Button onPress={requestPermission} title="Conceder permiso" />
       </View>
     );
   }
 
+  // Cambiar cámara frontal/trasera
   function toggleCameraFacing() {
     setFacing((current) => (current === 'back' ? 'front' : 'back'));
   }
+
+  // Handler para cuando se escanea un código
+  const handleBarCodeScanned = (result) => {
+    if (scanned) return; // evitar múltiples lecturas seguidas
+    setScanned(true);
+    setData(result.data);
+
+    Alert.alert('QR escaneado', `Contenido: ${result.data}`, [
+      {
+        text: 'OK',
+        onPress: () => {
+          setScanned(false);
+          // Si tienes navegación, puedes regresar a la vista anterior
+          if (navigation && navigation.goBack) {
+            navigation.goBack();
+          }
+        },
+      },
+    ]);
+  };
 
   return (
     <View
@@ -49,7 +70,15 @@ export function QR() {
       }}
     >
       <View style={styles.container}>
-        <CameraView style={styles.camera} facing={facing} />
+        <CameraView
+          style={styles.camera}
+          facing={facing}
+          barcodeScannerSettings={{
+            barcodeTypes: ['qr'], // solo escanea códigos QR
+          }}
+          onBarcodeScanned={handleBarCodeScanned}
+        />
+
         <View style={styles.buttonContainer}>
           <TouchableOpacity style={styles.button} onPress={toggleCameraFacing}>
             <Text style={styles.text}>Flip Camera</Text>
@@ -60,6 +89,7 @@ export function QR() {
   );
 }
 
+// --- Estilos ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -90,5 +120,3 @@ const styles = StyleSheet.create({
     color: 'white',
   },
 });
-
-//Como usar el componente de camara de expo --> npx expo install expo-camera en React Native con  Expo, dame un ejemplo de una vista que use el componente verifique si tiene permisos de la camara, y si es asi que se muestre la vista, en esa vista por el momento tendra un boton donde dira escanear QR, y ahi es donde viene mi otro duda veo que en la documentacion de Expo, camera tiene este metodo launchScanner(options) --> (veo que es tanto para iOS e Android) , pero no entiendo que hace muy bien, explicame todo detalladamente, desde como agregar los permisos en el app.json como ver si tengo permiso de la camara en la vista si no pedirla e ingresar a la vista, ahi por el momento tendre del boton que dira escanear QR, y eso debe abrir la camara para poder escanear el QR y una vez escaneado como obtener esos datos en mi APP

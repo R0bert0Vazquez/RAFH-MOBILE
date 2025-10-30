@@ -4,7 +4,7 @@ import {
   LogoutCredenciales,
   LogoutRespuesta,
 } from '@/src/models/types';
-const API_BASE_URL = 'http://192.168.100.77:8080/api';
+// const API_BASE_URL = 'http://192.168.3.33:8080/api';
 // const API_BASE_URL = 'http://192.168.3.61:8080/api';
 
 /**
@@ -17,7 +17,7 @@ export async function loginUsuario(
   credenciales: LoginCredenciales,
 ): Promise<LoginRespuesta> {
   try {
-    const respuesta = await fetch(API_BASE_URL + '/login', {
+    const respuesta = await fetch(process.env.EXPO_PUBLIC_API_URL + '/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -53,7 +53,7 @@ export async function logoutUsuario(
   credenciales: LogoutCredenciales,
 ): Promise<LogoutRespuesta> {
   try {
-    const respuesta = await fetch(API_BASE_URL + '/logout', {
+    const respuesta = await fetch(process.env.EXPO_PUBLIC_API_URL + '/logout', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

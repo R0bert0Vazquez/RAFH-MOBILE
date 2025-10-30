@@ -7,28 +7,19 @@
     "icon": "./assets/icon_rafh.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    // "splash": {
-    //   "image": "./assets/icon_rafh.png",
-    //   "resizeMode": "contain",
-    //   "backgroundColor": "#25A4D6"
-    // },
     "ios": {
       "supportsTablet": true,
       "requireFullScreen": true,
       "infoPlist": {
-        "NSAppTransportSecurity": {
-          "NSExceptionDomains": {
-            "192.168.100.77": {
-              "NSIncludesSubdomains": true,
-              "NSExceptionAllowsInsecureHTTPLoads": true
-            }
-          }
-        },
+        "NSCameraUsageDescription": "Esta aplicación utiliza la cámara para escanear códigos QR.",
         "ITSAppUsesNonExemptEncryption": false
       },
       "bundleIdentifier": "com.robert0vazquez.RAFHMobile"
     },
     "android": {
+      "permissions": [
+        "android.permission.CAMERA"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon_rafh.png",
         "backgroundColor": "#25A4D6"
@@ -41,6 +32,12 @@
       "favicon": "./assets/icon_rafh.png"
     },
     "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera"
+        }
+      ],
       [
         "expo-screen-orientation",
         {
