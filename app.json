@@ -7,24 +7,26 @@
     "icon": "./assets/icon_rafh.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/icon_rafh.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#25A4D6"
-    },
+    // "splash": {
+    //   "image": "./assets/icon_rafh.png",
+    //   "resizeMode": "contain",
+    //   "backgroundColor": "#25A4D6"
+    // },
     "ios": {
       "supportsTablet": true,
       "requireFullScreen": true,
-      "infoPlist": { // <-- AÑADIDO (Todo este bloque)
+      "infoPlist": {
         "NSAppTransportSecurity": {
           "NSExceptionDomains": {
-            "192.168.100.77": { // <-- ¡¡RECUERDA CAMBIAR ESTO!!
+            "192.168.100.77": {
               "NSIncludesSubdomains": true,
               "NSExceptionAllowsInsecureHTTPLoads": true
             }
           }
-        }
-      }
+        },
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "com.robert0vazquez.RAFHMobile"
     },
     "android": {
       "adaptiveIcon": {
@@ -32,42 +34,29 @@
         "backgroundColor": "#25A4D6"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.robert0_vazquez.RAFHMobile",
+      "package": "com.robert0vazquez.RAFHMobile",
       "usesCleartextTraffic": true
     },
     "web": {
       "favicon": "./assets/icon_rafh.png"
     },
     "plugins": [
-      // [
-      //   "expo-font",
-      //   {
-      //     "fonts": [
-      //       "./assets/fonts/Audiowide.ttf"
-      //     ],
-      //     "android": {
-      //       "fonts": [
-      //         {
-      //           "fontFamily": "Audiowide",
-      //           "fontDefinitions": [
-      //             {
-      //               "path": "./assets/fonts/Audiowide.ttf"
-      //             }
-      //           ]
-      //         }
-      //       ]
-      //     },
-      //     "ios": {
-      //       "fonts": [
-      //         "./assets/fonts/Audiowide.ttf"
-      //       ]
-      //     }
-      //   }
-      // ],
       [
         "expo-screen-orientation",
         {
           "initialOrientation": "DEFAULT"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#25A4D6",
+          "image": "./assets/icon_rafh.png",
+          "dark": {
+            "image": "./assets/icon_rafh.png",
+            "backgroundColor": "#14161A"
+          },
+          "imageWidth": 200
         }
       ],
       "expo-router"

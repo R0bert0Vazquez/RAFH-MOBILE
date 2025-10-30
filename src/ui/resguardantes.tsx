@@ -30,119 +30,10 @@ interface Resguardante {
   re_id_usuario: string;
 }
 
-// interface DataItem {
-//   res_nombre: string;
-//   res_apellido1: string;
-//   res_apellido2: string;
-//   res_puesto: string;
-//   res_correo: string;
-//   res_departamento: string;
-//   res_telefono: string;
-//   re_id_usuario: string;
-// }
-
-// const itemStyles: {
-//   [key: string]: { iconName: string };
-// } = {
-//   activo: {
-//     iconName: 'account-check-outline',
-//   },
-//   inactivo: {
-//     iconName: 'account-off-outline',
-//   },
-//   default: {
-//     iconName: 'account-question-outline',
-//   },
-// };
-
 const dataWorkPlace = {
   title: 'Instituto Tecnológico de Chetumal',
   image: Icon_itch,
 };
-
-// const DATA = [
-//   {
-//     id: 1,
-//     name: 'Juan Perez',
-//     area: 'Sistemas',
-//     rol: 'Gestor',
-//     estado: 'Activo',
-//     numero: '+52 123 456 7890',
-//     correo: 'juan.perez@empresa.com',
-//   },
-//   {
-//     id: 2,
-//     name: 'Ana Pech',
-//     area: 'Recursos Humanos',
-//     rol: 'Resguardante',
-//     estado: 'Inactivo',
-//     numero: '+52 234 567 8901',
-//     correo: 'ana.pech@empresa.com',
-//   },
-//   {
-//     id: 3,
-//     name: 'Carlos Lopez',
-//     area: 'Contabilidad',
-//     rol: 'Resguardante',
-//     estado: 'Activo',
-//     numero: '+52 345 678 9012',
-//     correo: 'carlos.lopez@empresa.com',
-//   },
-//   {
-//     id: 4,
-//     name: 'Maria Garcia',
-//     area: 'Contabilidad',
-//     rol: 'Resguardante',
-//     estado: 'Activo',
-//     numero: '+52 456 789 0123',
-//     correo: 'maria.garcia@empresa.com',
-//   },
-//   {
-//     id: 5,
-//     name: 'Farid Djamel',
-//     area: 'Ingles',
-//     rol: 'Resguardante',
-//     estado: 'Activo',
-//     numero: '+52 567 890 1234',
-//     correo: 'farid.djamel@empresa.com',
-//   },
-//   {
-//     id: 6,
-//     name: 'Hector Cruz',
-//     area: 'Inovacion',
-//     rol: 'Resguardante',
-//     estado: 'Activo',
-//     numero: '+52 678 901 2345',
-//     correo: 'hector.cruz@empresa.com',
-//   },
-//   {
-//     id: 7,
-//     name: 'Alejandro Poot',
-//     area: 'Inovacion',
-//     rol: 'Resguardante',
-//     estado: 'Activo',
-//     numero: '+52 789 012 3456',
-//     correo: 'alejandro.poot@empresa.com',
-//   },
-//   {
-//     id: 8,
-//     name: 'Alejandro Pech',
-//     area: 'Ingles',
-//     rol: 'Resguardante',
-//     estado: 'Activo',
-//     numero: '+52 890 123 4567',
-//     correo: 'alejandro.pech@empresa.com',
-//   },
-//   {
-//     id: 9,
-//     name: 'Ana Pech',
-//     area: 'Recursos Humanos',
-//     rol: 'Resguardante',
-//     estado: 'Inactivo',
-//     numero: '+52 901 234 5678',
-//     correo: 'ana.pech2@empresa.com',
-//   },
-// ];
 
 const DATA: Resguardante[] = [
   {
@@ -240,27 +131,14 @@ const DATA: Resguardante[] = [
 const ResguardantesHeader = () => {
   const colorScheme = useColorScheme();
   const isDarkMode = colorScheme === 'dark';
-  // --- AÑADE ESTAS VARIABLES DE ESTILO ---
+
   const modalBackgroundColor = isDarkMode ? '#14161A' : '#f1f5f9';
-  const modalBorderColor = isDarkMode ? 'e5e7eb' : '#e5e7eb'; // Borde gris claro
+  const modalBorderColor = isDarkMode ? 'e5e7eb' : '#e5e7eb';
   const modalTextColor = 'gray';
-  const modalSearchBgColor = isDarkMode ? '#14161A' : '#ffffff'; // Un poco más oscuro/claro que el fondo
+  const modalSearchBgColor = isDarkMode ? '#14161A' : '#ffffff';
   const modalSearchBorderColor = isDarkMode ? '#334155' : '#e2e8f0';
-  // --- FIN DE VARIABLES ---
 
   const [valueTextInp, setValueTextInp] = useState('');
-
-  // const [open, setOpen] = useState(false);
-  // const [value, setValue] = useState(null);
-  // const [itemsEstados, setItemsEstados] = useState([
-  //   {
-  //     label: 'Sin filtro',
-  //     value: 'sin-filtro',
-  //     iconName: 'filter-variant-remove',
-  //   },
-  //   { label: 'Activos', value: 'activos', iconName: 'check-circle' },
-  //   { label: 'Inactivos', value: 'inactivos', iconName: 'close-circle' },
-  // ]);
 
   const [openDepartamento, setOpenDepartamento] = useState(false);
   const [valueDepartamento, setValueDepartamento] = useState(null);
@@ -311,171 +189,98 @@ const ResguardantesHeader = () => {
 
   return (
     <>
-      <View className="items-center mt-4 mb-5">
-        <View className="flex-row items-center">
-          <Image
-            className="w-14 h-14 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full mr-2"
-            source={dataWorkPlace.image}
-          />
-          <Text className="text-gray-700 dark:text-slate-400 text-xl sm:text-xl md:text-4xl lg:text-5xl font-extrabold">
-            {dataWorkPlace.title}
-          </Text>
-        </View>
-      </View>
-
-      <View className="items-center mb-5">
-        <View className="flex-row">
-          <View className="relative">
-            <View className="bg-white dark:bg-[#14161A] border-2 border-gray-200 dark:border-1 dark:border-gray-700 rounded-lg shadow-lg ios:shadow-sm shadow-gray-600 mr-2">
-              <TextInput
-                mode="flat"
-                returnKeyType="search"
-                theme={customTheme}
-                value={valueTextInp}
-                onChangeText={setValueTextInp}
-                label="Buscar"
-                left={
-                  <TextInput.Icon
-                    icon={() => (
-                      <MaterialCommunityIcons
-                        name="account-search-outline"
-                        size={24}
-                        color={'#25A4D6'}
-                      />
-                    )}
-                  />
-                }
-                style={{
-                  width: 150,
-                  backgroundColor: 'transparent',
-                  marginRight: 4,
-                  borderBottomColor: 'transparent',
-                }}
-              />
-            </View>
-          </View>
-
-          <View className="bg-white dark:bg-[#14161A] border-2 border-gray-200 dark:border-1 dark:border-gray-700 rounded-lg shadow-lg ios:shadow-sm shadow-gray-600 mr-2">
-            <DropDownPicker
-              theme="DARK"
-              open={openDepartamento}
-              value={valueDepartamento}
-              setOpen={setOpenDepartamento}
-              items={itemsDepartamento}
-              setValue={setValueDepartamento}
-              setItems={setItemsDepartamento}
-              placeholder="Filtrar Departamento"
-              listMode="MODAL"
-              modalAnimationType="fade"
-              // onOpen={() => setOpen(false)} //Cerrar el otro al abrir este
-              // Título y Búsqueda
-              modalTitle="Selecciona un Departamento"
-              searchable={true}
-              searchPlaceholder="Buscar departamento..."
-              // Estilo del Contenedor del Modal
-              modalContentContainerStyle={{
-                backgroundColor: modalBackgroundColor,
-                borderWidth: 1,
-                borderColor: modalBorderColor,
-                borderRadius: 10,
-              }}
-              // Estilo del Título
-              modalTitleStyle={{
-                color: modalTextColor,
-                fontWeight: 'bold',
-              }}
-              // Estilo del Contenedor de Búsqueda
-              searchContainerStyle={{
-                borderBottomColor: modalBorderColor,
-              }}
-              // Estilo del Input de Búsqueda
-              searchTextInputStyle={{
-                color: modalTextColor,
-                backgroundColor: modalSearchBgColor,
-                borderColor: modalSearchBorderColor,
-                borderRadius: 8,
-                borderWidth: 1,
-              }}
-              // Estilo del Item
-              style={{
-                backgroundColor: 'transparent',
-                borderColor: 'transparent',
-              }}
-              containerStyle={{
-                justifyContent: 'flex-end',
-                width: 170,
-              }}
-              textStyle={{
-                color: 'gray',
-              }}
-              dropDownContainerStyle={{
-                backgroundColor:
-                  colorScheme === 'light' ? '#f1f5f9' : '#14161A',
-                borderColor: colorScheme === 'light' ? 'gray' : 'cyan',
-                borderWidth: 0.5,
-                borderRadius: 10,
-                borderTopStartRadius: 10,
-                borderTopEndRadius: 10,
-              }}
-              renderListItem={(props) => (
-                <Pressable
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    paddingVertical: 10,
-                    paddingHorizontal: 15,
-                  }}
-                  onPress={() => {
-                    // @ts-ignore
-                    props.onPress(props.item);
-                  }}
-                >
-                  <Text style={{ color: 'gray' }}>{props.item.label}</Text>
-                  <MaterialCommunityIcons // @ts-ignore
-                    name={props.item.iconName}
-                    size={20}
-                    color="gray"
-                    style={{ marginLeft: 5 }}
-                  />
-                </Pressable>
-              )}
+      <View className="flex-col landscape:flex-row landscape:items-start py-0 mb-0">
+        <View className="absolute">
+          <View className="py-3 landscape:py-0">
+            <Image
+              className="w-12 h-12 md:w-16 md:h-16 lg:w-24 lg:h-24 rounded-full mx-1"
+              source={dataWorkPlace.image}
             />
           </View>
+        </View>
 
-          {/* <View className="flex-col md:flex-row lg:flex-row items-center">
-             <View
-              style={{ zIndex: open ? 5000 : 1 }}
-              className="mr-0 md:mr-2 mb-2 md:mb-0"
-            >
-              <View className="bg-white dark:bg-[#14161A] border-2 border-gray-200 dark:border-1 dark:border-gray-700 rounded-lg shadow-lg ios:shadow-sm shadow-gray-600 mr-2">
+        <View className="landscape:flex-1">
+          <View className="landscape:items-center mb-5 landscape:mt-1 md:items-center">
+            <View className="flex-col landscape:flex-row md:flex-row lg:flex-row items-center">
+              <View className="relative w-9/12 landscape:w-5/12 md:w-5/12">
+                <View className="bg-white dark:bg-[#14161A] border-2 border-gray-200 dark:border-1 dark:border-gray-700 rounded-lg shadow-lg ios:shadow-sm shadow-gray-600 landscape:mr-2">
+                  <TextInput
+                    mode="flat"
+                    returnKeyType="search"
+                    theme={customTheme}
+                    value={valueTextInp}
+                    onChangeText={setValueTextInp}
+                    label="Buscar"
+                    left={
+                      <TextInput.Icon
+                        icon={() => (
+                          <MaterialCommunityIcons
+                            name="account-search-outline"
+                            size={24}
+                            color={'#25A4D6'}
+                          />
+                        )}
+                      />
+                    }
+                    style={{
+                      // width: 150,
+                      backgroundColor: 'transparent',
+                      marginRight: 4,
+                      borderBottomColor: 'transparent',
+                    }}
+                  />
+                </View>
+              </View>
+
+              <View className="w-11/12 landscape:w-5/12 md:w-5/12 mt-1 md:mt-0 lg:mt-0 bg-white dark:bg-[#14161A] border-2 border-gray-200 dark:border-1 dark:border-gray-700 rounded-lg shadow-lg ios:shadow-sm shadow-gray-600">
                 <DropDownPicker
                   theme="DARK"
-                  open={open}
-                  value={value}
-                  items={itemsEstados}
-                  setOpen={setOpen}
-                  setValue={setValue}
-                  setItems={setItemsEstados}
-                  placeholder="Filtrar Estado"
-                  listMode="SCROLLVIEW"
+                  open={openDepartamento}
+                  value={valueDepartamento}
+                  setOpen={setOpenDepartamento}
+                  items={itemsDepartamento}
+                  setValue={setValueDepartamento}
+                  setItems={setItemsDepartamento}
+                  placeholder="Filtrar Departamento"
+                  listMode="MODAL"
                   modalAnimationType="fade"
+                  modalTitle="Selecciona un Departamento"
+                  searchable={true}
+                  searchPlaceholder="Buscar departamento..."
+                  modalContentContainerStyle={{
+                    backgroundColor: modalBackgroundColor,
+                    borderWidth: 1,
+                    borderColor: modalBorderColor,
+                    borderRadius: 10,
+                  }}
+                  modalTitleStyle={{
+                    color: modalTextColor,
+                    fontWeight: 'bold',
+                  }}
+                  searchContainerStyle={{
+                    borderBottomColor: modalBorderColor,
+                  }}
+                  searchTextInputStyle={{
+                    color: modalTextColor,
+                    backgroundColor: modalSearchBgColor,
+                    borderColor: modalSearchBorderColor,
+                    borderRadius: 8,
+                    borderWidth: 1,
+                  }}
                   style={{
                     backgroundColor: 'transparent',
                     borderColor: 'transparent',
                   }}
                   containerStyle={{
                     justifyContent: 'flex-end',
-                    width: 170,
                   }}
                   textStyle={{
                     color: 'gray',
                   }}
                   dropDownContainerStyle={{
-                    marginTop: '-205%',
                     backgroundColor:
                       colorScheme === 'light' ? '#f1f5f9' : '#14161A',
-                    borderColor: colorScheme === 'light' ? 'gray' : 'gray',
+                    borderColor: colorScheme === 'light' ? 'gray' : 'cyan',
                     borderWidth: 0.5,
                     borderRadius: 10,
                     borderTopStartRadius: 10,
@@ -495,26 +300,19 @@ const ResguardantesHeader = () => {
                         props.onPress(props.item);
                       }}
                     >
-                      <Text style={{ color: 'gray', fontFamily: 'Audiowide' }}>
-                        {props.item.label}
-                      </Text>
+                      <Text style={{ color: 'gray' }}>{props.item.label}</Text>
                       <MaterialCommunityIcons // @ts-ignore
                         name={props.item.iconName}
                         size={20}
-                        color={
-                          props.item.value === 'activos'
-                            ? '#4ade80'
-                            : props.item.value === 'inactivos'
-                              ? '#f87171'
-                              : 'gray'
-                        }
+                        color="gray"
+                        style={{ marginLeft: 5 }}
                       />
                     </Pressable>
                   )}
                 />
               </View>
             </View>
-          </View> */}
+          </View>
         </View>
       </View>
     </>

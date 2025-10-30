@@ -5,6 +5,9 @@ import {
   Pressable,
   useColorScheme,
   FlatList,
+  Platform,
+  LayoutAnimation,
+  UIManager,
 } from 'react-native';
 
 import { StyleGlobal } from '@/src/components/styleGlobal';
@@ -29,33 +32,50 @@ type WorkCentersNavigationProp = StackNavigationProp<
   'WorkCenters'
 >;
 
+type WorkCenterItem = {
+  id: number;
+  name: string;
+  rol: string;
+  image: any;
+  direccion: string;
+  descripcion: string;
+  responsable: string;
+};
 type ItemProps = {
-  item: {
-    id: number;
-    name: string;
-    rol: string;
-    image: any;
-  };
+  item: WorkCenterItem;
 };
 
-const dataWorkCenters = [
+const dataWorkCenters: WorkCenterItem[] = [
   {
     id: 1,
     name: 'Instituto Tecnológico de Chetumal',
     rol: 'Administrador',
     image: Image_itch,
+    direccion: 'Av. Insurgentes No. 330, Col. David G. Gtz.',
+    descripcion:
+      'Institución pública de educación superior y posgrado perteneciente al Tecnológico Nacional de México.',
+    responsable: 'Ing. Mario Vicente González Robles',
   },
   // {
+  //   id: 2,
   //   name: 'Urban Trails Corporation',
   //   rol: 'Administrador',
   //   image: Image_urbanCo,
   // },
   // {
+  //   id: 3,
   //   name: 'Centro de Salud',
   //   rol: 'Resguardante',
   //   image: Image_centroSalud,
   // },
 ];
+
+if (
+  Platform.OS === 'android' &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 export function WorkCenters() {
   const insets = useSafeAreaInsets();
@@ -65,8 +85,9 @@ export function WorkCenters() {
 
   const { loginRespuesta } = route.params;
   const { access_token, user } = loginRespuesta;
-
   const [isLoading, setIsLoading] = useState(false);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+
   const handleLogout = async () => {
     setIsLoading(true);
 
@@ -77,14 +98,16 @@ export function WorkCenters() {
 
       const logoutRespuesta = await logoutUsuario(credenciales);
 
-      setTimeout(
-        () => {
-          console.log('Logout exitoso:', JSON.stringify(logoutRespuesta));
-          navigation.navigate('Login');
-        },
-        500,
-        setIsLoading(false),
-      );
+      setTimeout(() => {
+        console.log('Logout exitoso:', JSON.stringify(logoutRespuesta));
+        setIsLoading(false);
+
+        // navigation.navigate('Login');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        });
+      }, 500);
     } catch (err: any) {
       setIsLoading(false);
       if (err.message) {
@@ -97,6 +120,10 @@ export function WorkCenters() {
     console.log('Access_token:' + access_token);
     console.log('ID del Centro de Trabajo:' + id);
     navigation.navigate('MainApp', { access_token, workCenterId: id });
+  };
+  const handleSelectItemLongPress = (id: number) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+    setExpandedId(expandedId === id ? null : id);
   };
 
   const renderHeader = () => (
@@ -111,13 +138,6 @@ export function WorkCenters() {
           <Text className="font-bold">Bienvenido, </Text>
           {user.usuario_nombre}
         </Text>
-
-        {isLoading && (
-          <ActivityIndicator
-            size="small"
-            color={colorScheme === 'light' ? '#374151' : '#94a3b8'}
-          />
-        )}
 
         <Pressable disabled={isLoading} onPress={handleLogout}>
           <MaterialCommunityIcons
@@ -144,10 +164,12 @@ export function WorkCenters() {
               <Pressable
                 disabled={isLoading}
                 onPress={() => handleWorkCenterSelect(item.id)}
-                className="flex-row p-2 bg-slate-100 dark:bg-slate-800 active:bg-slate-300 active:dark:bg-slate-900 border-2 border-gray-200 dark:border-gray-700 rounded-md shadow-sm ios:shadow-sm shadow-gray-600 dark:shadow-cyan-50"
+                onLongPress={() => handleSelectItemLongPress(item.id)}
+                delayLongPress={200}
+                className="flex-col p-2 bg-slate-100 dark:bg-slate-800 active:bg-slate-300 active:dark:bg-slate-900 border-2 border-gray-200 dark:border-gray-700 rounded-md shadow-sm ios:shadow-sm shadow-gray-600 dark:shadow-cyan-50"
               >
                 <Image
-                  className="w-32 h-32 md:w-36 md:h-36 lg:w-40 lg:h-40 rounded-lg"
+                  className="w-full h-48 md:w-full md:h-60 lg:w-full lg:h-60 rounded-md"
                   source={item.image}
                 ></Image>
                 <View className="flex-1 flex-col p-3 ">
@@ -158,6 +180,30 @@ export function WorkCenters() {
                     {item.rol}
                   </Text>
                 </View>
+                {expandedId === item.id && (
+                  <View className="p-3 border-t-2 border-gray-200 dark:border-gray-600 mt-2">
+                    <Text className="text-gray-800 dark:text-slate-300 font-bold text-lg mb-1">
+                      Dirección:
+                    </Text>
+                    <Text className="text-gray-700 dark:text-slate-400 text-base mb-3">
+                      {item.direccion}
+                    </Text>
+
+                    <Text className="text-gray-800 dark:text-slate-300 font-bold text-lg mb-1">
+                      Responsable:
+                    </Text>
+                    <Text className="text-gray-700 dark:text-slate-400 text-base mb-3">
+                      {item.responsable}
+                    </Text>
+
+                    <Text className="text-gray-800 dark:text-slate-300 font-bold text-lg mb-1">
+                      Descripción:
+                    </Text>
+                    <Text className="text-gray-700 dark:text-slate-400 text-base">
+                      {item.descripcion}
+                    </Text>
+                  </View>
+                )}
               </Pressable>
             </View>
           </View>
@@ -165,6 +211,22 @@ export function WorkCenters() {
       </View>
     </View>
   );
+
+  if (isLoading) {
+    return (
+      <StyleGlobal>
+        <View
+          style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+        >
+          <ActivityIndicator
+            size="large"
+            color={colorScheme === 'light' ? '#25A4D6' : 'white'}
+          />
+        </View>
+      </StyleGlobal>
+    );
+  }
+
   return (
     <StyleGlobal>
       <View

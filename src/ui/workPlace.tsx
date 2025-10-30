@@ -8,7 +8,8 @@ import {
   FlatList,
   useColorScheme,
   ActivityIndicator,
-  useWindowDimensions,
+  LayoutAnimation,
+  UIManager,
 } from 'react-native';
 import React, { useState, memo, useEffect } from 'react';
 
@@ -69,9 +70,6 @@ const dataWorkPlace = {
 const WorkPlaceHeader = ({ stats }: { stats: Stats | undefined }) => {
   const colorScheme = useColorScheme();
 
-  const { width, height } = useWindowDimensions();
-  const isLandscape = width > height;
-
   const [valueTextInp, setValueTextInp] = useState('');
 
   const [open, setOpen] = useState(false);
@@ -108,80 +106,11 @@ const WorkPlaceHeader = ({ stats }: { stats: Stats | undefined }) => {
 
   return (
     <>
-      {/* <View className="portrait:items-center mt-1 mb-2 landscape:ml-2">
-        <View className="flex-row portrait:items-center">
-          <Image
-            className="w-14 h-14 md:w-20 md:h-20 lg:w-20 lg:h-20 rounded-full mr-2"
-            source={dataWorkPlace.image}
-          />
-          {!isLandscape && (
-            <Text className="text-gray-700 dark:text-slate-400 text-xl sm:text-xl md:text-4xl lg:text-5xl font-extrabold">
-              {dataWorkPlace.title}
-            </Text>
-          )}
-        </View>
-      </View>
-
-      <View className="items-center mt-1">
-        <View className="w-11/12 md:w-10/12 lg:w-10/12 mb-3">
-          <View className="bg-white dark:bg-[#14161A] border-2 border-gray-200 dark:border-1 dark:border-gray-700 rounded-lg shadow-lg ios:shadow-sm shadow-gray-600">
-            <Text className="text-center text-gray-700 dark:text-slate-400 text-xl md:text-2xl lg:text-2xl font-semibold mb-2">
-              {dataWorkPlace.title}
-            </Text>
-            <View className="flex-row items-center">
-              <MaterialCommunityIcons
-                className="p-1"
-                name="archive-outline"
-                size={40}
-                color="#25A4D6"
-              />
-              <Text className="text-gray-700 dark:text-slate-400 text-xl md:text-2xl lg:text-2xl font-normal">
-                Bienes registrados: {stats?.bienes_registrados}
-              </Text>
-            </View>
-            <View className="flex-row items-center">
-              <MaterialCommunityIcons
-                className="p-1"
-                name="account-group-outline"
-                size={40}
-                color="#25A4D6"
-              />
-              <Text className="text-gray-700 dark:text-slate-400 text-xl md:text-2xl lg:text-2xl font-normal">
-                Gestores asignados: {stats?.gestores_asignados}
-              </Text>
-            </View>
-            <View className="flex-row items-center">
-              <MaterialCommunityIcons
-                className="p-1"
-                name="floor-plan"
-                size={40}
-                color="#25A4D6"
-              />
-              <Text className="text-gray-700 dark:text-slate-400 text-xl md:text-2xl lg:text-2xl font-normal">
-                Áreas asociadas: {stats?.areas_asociadas}
-              </Text>
-            </View>
-            <View className="flex-row items-center">
-              <MaterialCommunityIcons
-                className="p-1"
-                name="account-supervisor-outline"
-                size={40}
-                color="#25A4D6"
-              />
-              <Text className="text-gray-700 dark:text-slate-400 text-xl md:text-2xl lg:text-2xl font-normal">
-                Resguardantes registrados:
-                {stats?.resguardantes_registrados}
-              </Text>
-            </View>
-          </View>
-        </View>
-      </View> */}
-
-      <View className="landscape:flex-row landscape:items-center">
-        <View className="portrait:items-center mt-1 mb-2 landscape:ml-16">
+      {/* <View className="landscape:flex-row landscape:items-start landscape:mx-2">
+        <View className="portrait:items-center mt-1 mb-2">
           <View className="flex-row portrait:items-center">
             <Image
-              className="w-14 h-14 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full"
+              className="w-14 h-14 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full portrait:mr-2"
               source={dataWorkPlace.image}
             />
             {!isLandscape && (
@@ -192,163 +121,226 @@ const WorkPlaceHeader = ({ stats }: { stats: Stats | undefined }) => {
           </View>
         </View>
 
-        <View className="items-center mt-1 landscape:flex-1 landscape:mt-1 landscape:mr-40">
+        <View className="items-center mt-1 landscape:flex-1 landscape:mt-1">
           <View className="w-11/12 md:w-10/12 lg:w-10/12 mb-3">
             <View className="bg-white dark:bg-[#14161A] border-2 border-gray-200 dark:border-1 dark:border-gray-700 rounded-lg shadow-lg ios:shadow-sm shadow-gray-600">
-              <Text className="text-center text-gray-700 dark:text-slate-400 text-xl md:text-2xl lg:text-2xl font-semibold mb-2">
+              <Text className="text-center text-gray-700 dark:text-slate-400 text-xl md:text-2xl lg:text-2xl font-semibold mb-1">
                 {dataWorkPlace.title}
               </Text>
               <View className="flex-row items-center">
                 <MaterialCommunityIcons
-                  className="p-1"
+                  className="ml-2"
                   name="archive-outline"
-                  size={40}
+                  size={35}
                   color="#25A4D6"
                 />
-                <Text className="text-gray-700 dark:text-slate-400 text-xl md:text-2xl lg:text-2xl font-normal">
+                <Text className="text-gray-700 dark:text-slate-400 text-xl md:text-2xl lg:text-2xl font-normal ml-2">
                   Bienes registrados: {stats?.bienes_registrados}
                 </Text>
               </View>
               <View className="flex-row items-center">
                 <MaterialCommunityIcons
-                  className="p-1"
+                  className="ml-2"
                   name="account-group-outline"
-                  size={40}
+                  size={35}
                   color="#25A4D6"
                 />
-                <Text className="text-gray-700 dark:text-slate-400 text-xl md:text-2xl lg:text-2xl font-normal">
+                <Text className="text-gray-700 dark:text-slate-400 text-xl md:text-2xl lg:text-2xl font-normal ml-2">
                   Gestores asignados: {stats?.gestores_asignados}
                 </Text>
               </View>
               <View className="flex-row items-center">
                 <MaterialCommunityIcons
-                  className="p-1"
+                  className="ml-2"
                   name="floor-plan"
-                  size={40}
+                  size={35}
                   color="#25A4D6"
                 />
-                <Text className="text-gray-700 dark:text-slate-400 text-xl md:text-2xl lg:text-2xl font-normal">
+                <Text className="text-gray-700 dark:text-slate-400 text-xl md:text-2xl lg:text-2xl font-normal ml-2">
                   Áreas asociadas: {stats?.areas_asociadas}
                 </Text>
               </View>
               <View className="flex-row items-center">
                 <MaterialCommunityIcons
-                  className="p-1"
+                  className="ml-2"
                   name="account-supervisor-outline"
-                  size={40}
+                  size={35}
                   color="#25A4D6"
                 />
-                <Text className="text-gray-700 dark:text-slate-400 text-xl md:text-2xl lg:text-2xl font-normal">
-                  Resguardantes registrados:
-                  {stats?.resguardantes_registrados}
+                <Text className="text-gray-700 dark:text-slate-400 text-xl md:text-2xl lg:text-2xl font-normal ml-2">
+                  Resguardantes registrados: {stats?.resguardantes_registrados}
                 </Text>
               </View>
+            </View>
+          </View>
+        </View>
+      </View> */}
+
+      <View className="items-center mt-1 mb-1">
+        <View className="flex-row items-center">
+          <Image
+            className="w-12 h-12 md:w-16 md:h-16 lg:w-24 lg:h-24 rounded-full mr-2"
+            source={dataWorkPlace.image}
+          />
+          <Text className="text-gray-700 dark:text-slate-400 text-xl sm:text-xl md:text-4xl lg:text-5xl font-extrabold">
+            {dataWorkPlace.title}
+          </Text>
+        </View>
+      </View>
+
+      <View className="items-center mt-1 landscape:flex-1 landscape:mt-1">
+        <View className="w-11/12 md:w-10/12 lg:w-10/12 mb-3">
+          <View className="bg-white dark:bg-[#14161A] border-2 border-gray-200 dark:border-1 dark:border-gray-700 rounded-lg shadow-lg ios:shadow-sm shadow-gray-600">
+            <Text className="text-center text-gray-700 dark:text-slate-400 text-xl md:text-2xl lg:text-2xl font-semibold mb-1">
+              {dataWorkPlace.title}
+            </Text>
+            <View className="flex-row items-center">
+              <MaterialCommunityIcons
+                className="ml-2"
+                name="archive-outline"
+                size={35}
+                color="#25A4D6"
+              />
+              <Text className="text-gray-700 dark:text-slate-400 text-xl md:text-2xl lg:text-2xl font-normal ml-2">
+                Bienes registrados: {stats?.bienes_registrados}
+              </Text>
+            </View>
+            <View className="flex-row items-center">
+              <MaterialCommunityIcons
+                className="ml-2"
+                name="account-group-outline"
+                size={35}
+                color="#25A4D6"
+              />
+              <Text className="text-gray-700 dark:text-slate-400 text-xl md:text-2xl lg:text-2xl font-normal ml-2">
+                Gestores asignados: {stats?.gestores_asignados}
+              </Text>
+            </View>
+            <View className="flex-row items-center">
+              <MaterialCommunityIcons
+                className="ml-2"
+                name="floor-plan"
+                size={35}
+                color="#25A4D6"
+              />
+              <Text className="text-gray-700 dark:text-slate-400 text-xl md:text-2xl lg:text-2xl font-normal ml-2">
+                Áreas asociadas: {stats?.areas_asociadas}
+              </Text>
+            </View>
+            <View className="flex-row items-center">
+              <MaterialCommunityIcons
+                className="ml-2"
+                name="account-supervisor-outline"
+                size={35}
+                color="#25A4D6"
+              />
+              <Text className="text-gray-700 dark:text-slate-400 text-xl md:text-2xl lg:text-2xl font-normal ml-2">
+                Resguardantes registrados: {stats?.resguardantes_registrados}
+              </Text>
             </View>
           </View>
         </View>
       </View>
 
       <View className="items-center mt-1 mb-2">
-        <Text className="text-gray-700 dark:text-slate-400 text-2xl md:text-2xl lg:text-2xl font-bold mb-2">
+        <Text className="text-gray-700 dark:text-slate-400 text-2xl md:text-2xl lg:text-2xl font-bold">
           Ultimos movimientos:
         </Text>
       </View>
 
-      <View className="items-center mb-5">
-        <View className="flex-row">
-          <View className="bg-white dark:bg-[#14161A] border-2 border-gray-200 dark:border-1 dark:border-gray-700 rounded-lg shadow-lg ios:shadow-sm shadow-gray-600 mr-2">
-            <TextInput
-              mode="flat"
-              returnKeyType="search"
-              theme={customTheme}
-              value={valueTextInp}
-              onChangeText={setValueTextInp}
-              label="Buscar"
-              left={
-                <TextInput.Icon
-                  icon={() => (
-                    <MaterialCommunityIcons
-                      name="account-search-outline"
-                      size={24}
-                      color={'#25A4D6'}
-                    />
-                  )}
-                />
-              }
-              style={{
-                width: 150,
-                backgroundColor: 'transparent',
-                marginRight: 4,
-                borderBottomColor: 'transparent',
-              }}
-            />
-          </View>
-
-          <View className="bg-white dark:bg-[#14161A] border-2 border-gray-200 dark:border-1 dark:border-gray-700 rounded-lg shadow-lg ios:shadow-sm shadow-gray-600">
-            <DropDownPicker
-              theme="DARK"
-              open={open}
-              value={value}
-              items={itemsTipo}
-              setOpen={setOpen}
-              setValue={setValue}
-              setItems={setTipo}
-              placeholder="Filtrar Movimiento"
-              style={{
-                backgroundColor: 'transparent',
-                borderColor: 'transparent',
-              }}
-              containerStyle={{
-                justifyContent: 'flex-end',
-                marginLeft: 2,
-                width: 170,
-              }}
-              textStyle={{
-                color: 'gray',
-              }}
-              dropDownContainerStyle={{
-                marginTop: '-300%',
-                // marginTop: 12,
-                backgroundColor: colorScheme === 'light' ? 'white' : '#14161A',
-                borderColor: colorScheme === 'light' ? 'gray' : 'gray',
-                borderWidth: 0.5,
-                borderRadius: 10,
-                borderTopStartRadius: 10,
-                borderTopEndRadius: 10,
-              }}
-              renderListItem={(props) => (
-                <Pressable
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    paddingVertical: 10,
-                    paddingHorizontal: 15,
-                  }}
-                  onPress={() => {
-                    // @ts-ignore
-                    props.onPress(props.item);
-                  }}
-                >
-                  <Text style={{ color: 'gray', fontFamily: 'Audiowide' }}>
-                    {props.item.label}
-                  </Text>
-                  <MaterialCommunityIcons // @ts-ignore
-                    name={props.item.iconName}
-                    size={20}
-                    color={
-                      props.item.value === 'transferencia'
-                        ? '#D7D756'
-                        : props.item.value === 'registro'
-                          ? '#198A43'
-                          : props.item.value === 'mantenimiento'
-                            ? '#FFA500'
-                            : 'gray'
-                    }
+      <View className="mt-1 landscape:flex-1 landscape:mt-1 mb-3">
+        <View className="landscape:items-center md:items-center">
+          <View className="flex-col landscape:flex-row md:flex-row lg:flex-row items-center">
+            <View className="w-11/12 landscape:w-5/12 md:w-5/12 bg-white dark:bg-[#14161A] border-2 border-gray-200 dark:border-1 dark:border-gray-700 rounded-lg shadow-lg ios:shadow-sm shadow-gray-600 landscape:mr-2 md:mr-2 ">
+              <TextInput
+                mode="flat"
+                returnKeyType="search"
+                theme={customTheme}
+                value={valueTextInp}
+                onChangeText={setValueTextInp}
+                label="Buscar"
+                left={
+                  <TextInput.Icon
+                    icon={() => (
+                      <MaterialCommunityIcons
+                        name="account-search-outline"
+                        size={24}
+                        color={'#25A4D6'}
+                      />
+                    )}
                   />
-                </Pressable>
-              )}
-            ></DropDownPicker>
+                }
+                style={{
+                  backgroundColor: 'transparent',
+                }}
+              />
+            </View>
+
+            <View className="w-11/12 landscape:w-5/12 md:w-5/12 mt-1 md:mt-0 lg:mt-0 bg-white dark:bg-[#14161A] border-2 border-gray-200 dark:border-1 dark:border-gray-700 rounded-lg shadow-lg ios:shadow-sm shadow-gray-600">
+              <DropDownPicker
+                theme="DARK"
+                open={open}
+                value={value}
+                items={itemsTipo}
+                setOpen={setOpen}
+                setValue={setValue}
+                setItems={setTipo}
+                placeholder="Filtrar Movimiento"
+                style={{
+                  backgroundColor: 'transparent',
+                  borderColor: 'transparent',
+                }}
+                containerStyle={{
+                  justifyContent: 'flex-end',
+                  marginLeft: 2,
+                }}
+                textStyle={{
+                  color: 'gray',
+                }}
+                dropDownContainerStyle={{
+                  marginTop: '-300%',
+                  backgroundColor:
+                    colorScheme === 'light' ? 'white' : '#14161A',
+                  borderColor: colorScheme === 'light' ? 'gray' : 'gray',
+                  borderWidth: 0.5,
+                  borderRadius: 10,
+                  borderTopStartRadius: 10,
+                  borderTopEndRadius: 10,
+                }}
+                renderListItem={(props) => (
+                  <Pressable
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      paddingVertical: 10,
+                      paddingHorizontal: 15,
+                    }}
+                    onPress={() => {
+                      // @ts-ignore
+                      props.onPress(props.item);
+                    }}
+                  >
+                    <Text style={{ color: 'gray', fontFamily: 'Audiowide' }}>
+                      {props.item.label}
+                    </Text>
+                    <MaterialCommunityIcons // @ts-ignore
+                      name={props.item.iconName}
+                      size={20}
+                      color={
+                        props.item.value === 'transferencia'
+                          ? '#D7D756'
+                          : props.item.value === 'registro'
+                            ? '#198A43'
+                            : props.item.value === 'mantenimiento'
+                              ? '#FFA500'
+                              : 'gray'
+                      }
+                    />
+                  </Pressable>
+                )}
+              ></DropDownPicker>
+            </View>
           </View>
         </View>
       </View>
@@ -422,6 +414,13 @@ const ItemComponent = ({
 
 const Item = memo(ItemComponent);
 
+if (
+  Platform.OS === 'android' &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
 export function WorkPlace({
   access_token,
   workCenterId,
@@ -492,6 +491,7 @@ export function WorkPlace({
   }, [access_token, workCenterId]);
 
   const handleSelectItem = (item: MovimientoItem) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
     setExpandedId(expandedId === item.id ? null : item.id);
   };
 

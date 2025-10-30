@@ -14,9 +14,10 @@ export function StyleGlobal({ children }: StyleGlobalProps) {
 
   return (
     <ImageBackground
+      className="backdrop-opacity-100"
       source={imgBackGround}
       style={[styles.background, themeContainerStyle]}
-      resizeMode="cover" // Asegura que la imagen cubra todo el espacio sin deformarse
+      resizeMode="cover"
     >
       {children}
     </ImageBackground>
@@ -24,18 +25,14 @@ export function StyleGlobal({ children }: StyleGlobalProps) {
 }
 
 const styles = StyleSheet.create({
-  // Estilo base para el fondo
   background: {
-    flex: 1, // Ocupa t oda la pantalla
+    flex: 1,
     width: '100%',
     height: '100%',
     position: 'absolute',
-    // alignItems: 'center', // Centra el contenido horizontalmente
-    // justifyContent: 'center', // Centra el contenido verticalmente
   },
   lightContainer: {
-    // backgroundColor: '#d1c9c9ff', // Esto funcionará como un tinte o color de respaldo
-    backgroundColor: '#fff',
+    backgroundColor: '#f5f5f5',
   },
   darkContainer: {
     backgroundColor: '#14161A',

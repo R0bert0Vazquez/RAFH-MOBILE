@@ -67,7 +67,7 @@ export function Login() {
     setIsSucceess(false);
 
     try {
-      console.log('\nLogin attempt with credentials:', { email, password });
+      // console.log('\nLogin attempt with credentials:', { email, password });
 
       const credenciales: LoginCredenciales = {
         usuario_correo: email,
@@ -80,8 +80,12 @@ export function Login() {
       setIsSucceess(true);
 
       setTimeout(() => {
-        console.log('\nLogin exitoso:', JSON.stringify(loginRespuesta));
-        navigation.navigate('WorkCenters', { loginRespuesta });
+        // console.log('\nLogin exitoso:', JSON.stringify(loginRespuesta));
+        // navigation.navigate('WorkCenters', { loginRespuesta });
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'WorkCenters', params: { loginRespuesta } }],
+        });
       }, 500);
     } catch (err: any) {
       setIsLoading(false);
