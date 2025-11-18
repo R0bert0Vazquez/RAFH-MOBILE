@@ -14,10 +14,10 @@ export function StyleGlobal({ children }: StyleGlobalProps) {
 
   return (
     <ImageBackground
-      className="backdrop-opacity-100"
       source={imgBackGround}
       style={[styles.background, themeContainerStyle]}
       resizeMode="cover"
+      imageStyle={styles.backgroundImage}
     >
       {children}
     </ImageBackground>
@@ -36,5 +36,8 @@ const styles = StyleSheet.create({
   },
   darkContainer: {
     backgroundColor: '#14161A',
+  },
+  backgroundImage: {
+    opacity: 0.4,
   },
 });

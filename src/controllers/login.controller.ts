@@ -4,8 +4,6 @@ import {
   LogoutCredenciales,
   LogoutRespuesta,
 } from '@/src/models/types';
-// const API_BASE_URL = 'http://192.168.3.33:8080/api';
-// const API_BASE_URL = 'http://192.168.3.61:8080/api';
 
 /**
  * Intenta autenticar a un usuario contra la API.
@@ -31,6 +29,9 @@ export async function loginUsuario(
       throw new Error(errorData.message || 'Correo o contraseña incorrectos');
     }
 
+    if (respuesta.status === 401) {
+    }
+
     if (!respuesta.ok) {
       throw new Error('Error en el servidor, Itenta de nuevo más tarde');
     }
@@ -38,7 +39,7 @@ export async function loginUsuario(
     const loginRespuesta: LoginRespuesta = await respuesta.json();
     return loginRespuesta;
   } catch (error) {
-    console.error('Error en el loginUsuario:', error);
+    // console.error('Error en el loginUsuario:', error);
     throw error;
   }
 }
@@ -62,9 +63,14 @@ export async function logoutUsuario(
       },
     });
 
+    if (respuesta.status === 422) {
+      const errorData = await respuesta.json();
+      throw new Error(errorData.message || 'Correo o contraseña incorrectos');
+    }
+
     if (respuesta.status === 401) {
-      const errorLogout = await respuesta.json();
-      throw new Error(errorLogout.message || 'No autorizado');
+      const errorData = await respuesta.json();
+      throw new Error(errorData.message || 'Credenciales incorrectas');
     }
 
     if (!respuesta.ok) {

@@ -8,9 +8,10 @@ import {
   Platform,
   LayoutAnimation,
   UIManager,
+  ActivityIndicator,
 } from 'react-native';
 
-import { StyleGlobal } from '@/src/components/styleGlobal';
+import { StyleGlobal } from '@/src/components/StyleGlobal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -19,17 +20,14 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { LogoutCredenciales, RootStackParamList } from '@/src/models/types';
 import { useState } from 'react';
 import { logoutUsuario } from '@/src/controllers/login.controller';
-import { ActivityIndicator } from 'react-native-paper';
 
 const Icon_rafh = require('@/assets/icon2_512x512_rafh.png');
 const Image_itch = require('@/assets/itch.png');
-// const Image_urbanCo = require('@/assets/urbanCo.png');
-// const Image_centroSalud = require('@/assets/centroSalud.png');
 
-type WorkCentersRouteProp = RouteProp<RootStackParamList, 'WorkCenters'>;
+type WorkCentersRouteProp = RouteProp<RootStackParamList, 'Gest_WorkCenters'>;
 type WorkCentersNavigationProp = StackNavigationProp<
   RootStackParamList,
-  'WorkCenters'
+  'Gest_WorkCenters'
 >;
 
 type WorkCenterItem = {
@@ -56,28 +54,22 @@ const dataWorkCenters: WorkCenterItem[] = [
       'Institución pública de educación superior y posgrado perteneciente al Tecnológico Nacional de México.',
     responsable: 'Ing. Mario Vicente González Robles',
   },
-  // {
-  //   id: 2,
-  //   name: 'Urban Trails Corporation',
-  //   rol: 'Administrador',
-  //   image: Image_urbanCo,
-  // },
-  // {
-  //   id: 3,
-  //   name: 'Centro de Salud',
-  //   rol: 'Resguardante',
-  //   image: Image_centroSalud,
-  // },
 ];
 
-if (
-  Platform.OS === 'android' &&
-  UIManager.setLayoutAnimationEnabledExperimental
-) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
+// if (
+//   Platform.OS === 'android' &&
+//   UIManager.setLayoutAnimationEnabledExperimental
+// ) {
+//   UIManager.setLayoutAnimationEnabledExperimental(true);
+// }
+
+if (Platform.OS === 'android') {
+  if (UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+  }
 }
 
-export function WorkCenters() {
+export function Gest_WorkCenters() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<WorkCentersNavigationProp>();
   const route = useRoute<WorkCentersRouteProp>();
@@ -85,11 +77,11 @@ export function WorkCenters() {
 
   const { loginRespuesta } = route.params;
   const { access_token, user } = loginRespuesta;
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingLogout, setIsLoadingLogout] = useState(false);
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const handleLogout = async () => {
-    setIsLoading(true);
+    setIsLoadingLogout(true);
 
     try {
       const credenciales: LogoutCredenciales = {
@@ -100,16 +92,15 @@ export function WorkCenters() {
 
       setTimeout(() => {
         console.log('Logout exitoso:', JSON.stringify(logoutRespuesta));
-        setIsLoading(false);
+        setIsLoadingLogout(false);
 
-        // navigation.navigate('Login');
         navigation.reset({
           index: 0,
           routes: [{ name: 'Login' }],
         });
       }, 500);
     } catch (err: any) {
-      setIsLoading(false);
+      setIsLoadingLogout(false);
       if (err.message) {
         console.log('Logout error:', err.message);
       }
@@ -117,9 +108,11 @@ export function WorkCenters() {
   };
 
   const handleWorkCenterSelect = (id: number) => {
-    console.log('Access_token:' + access_token);
-    console.log('ID del Centro de Trabajo:' + id);
-    navigation.navigate('MainApp', { access_token, workCenterId: id });
+    navigation.navigate('Gest_MainTabNavigator', {
+      access_token,
+      user,
+      workCenterId: id,
+    });
   };
   const handleSelectItemLongPress = (id: number) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
@@ -134,12 +127,12 @@ export function WorkCenters() {
           source={Icon_rafh}
         />
 
-        <Text className="flex-1 text-gray-700 dark:text-slate-400 text-2xl sm:text-2xl md:text-4xl lg:text-5xl mr-1">
-          <Text className="font-bold">Bienvenido, </Text>
+        <Text className="flex-1 text-gray-700 dark:text-slate-200 text-2xl sm:text-2xl md:text-4xl lg:text-5xl mr-1">
+          <Text className="font-extrabold">Bienvenido, </Text>
           {user.usuario_nombre}
         </Text>
 
-        <Pressable disabled={isLoading} onPress={handleLogout}>
+        <Pressable disabled={isLoadingLogout} onPress={handleLogout}>
           <MaterialCommunityIcons
             name="logout"
             size={40}
@@ -149,7 +142,7 @@ export function WorkCenters() {
       </View>
 
       <View className="mb-3 mx-9">
-        <Text className="text-gray-700 dark:text-slate-400 text-2xl sm:text-2xl md:text-3xl lg:text-5xl font-bold">
+        <Text className="text-gray-700 dark:text-slate-300 text-2xl sm:text-2xl md:text-3xl lg:text-5xl font-bold">
           Centros de trabajo:
         </Text>
       </View>
@@ -162,18 +155,18 @@ export function WorkCenters() {
           <View className="items-center mt-2 mb-2 mx-2">
             <View className="w-full">
               <Pressable
-                disabled={isLoading}
+                disabled={isLoadingLogout}
                 onPress={() => handleWorkCenterSelect(item.id)}
                 onLongPress={() => handleSelectItemLongPress(item.id)}
-                delayLongPress={200}
+                delayLongPress={100}
                 className="flex-col p-2 bg-slate-100 dark:bg-slate-800 active:bg-slate-300 active:dark:bg-slate-900 border-2 border-gray-200 dark:border-gray-700 rounded-md shadow-sm ios:shadow-sm shadow-gray-600 dark:shadow-cyan-50"
               >
                 <Image
-                  className="w-full h-48 md:w-full md:h-60 lg:w-full lg:h-60 rounded-md"
+                  className="w-full h-48 md:w-full md:h-96 lg:w-full lg:h-96 rounded-md"
                   source={item.image}
                 ></Image>
                 <View className="flex-1 flex-col p-3 ">
-                  <Text className="text-gray-700 dark:text-slate-400 text-xl md:text-2xl lg:text-2xl font-semibold">
+                  <Text className="text-gray-700 dark:text-slate-300 text-xl md:text-2xl lg:text-2xl font-semibold">
                     {item.name}
                   </Text>
                   <Text className="text-gray-700 dark:text-slate-400 text-xl italic">
@@ -212,7 +205,7 @@ export function WorkCenters() {
     </View>
   );
 
-  if (isLoading) {
+  if (isLoadingLogout) {
     return (
       <StyleGlobal>
         <View
@@ -220,8 +213,13 @@ export function WorkCenters() {
         >
           <ActivityIndicator
             size="large"
-            color={colorScheme === 'light' ? '#25A4D6' : 'white'}
+            color={colorScheme === 'light' ? 'gray' : 'white'}
           />
+          <View className="items-center">
+            <Text className="text-gray-700 dark:text-slate-300 text-2xl italic">
+              Cerrando sesión...
+            </Text>
+          </View>
         </View>
       </StyleGlobal>
     );

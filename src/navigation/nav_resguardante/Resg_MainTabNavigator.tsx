@@ -2,22 +2,26 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { RouteProp } from '@react-navigation/native';
+import { RouteProp, useRoute } from '@react-navigation/native';
 import { RootStackParamList } from '@/src/models/types';
 
-import { WorkPlace } from '@/src/ui/workPlace';
-import { QR } from '@/src/ui/qr';
-import { Resguardantes } from '@/src/ui/resguardantes';
+import { Resg_MainResguardante } from '@/src/ui/ui_resguardante/Resg_MainResguardante';
+import { Resg_ScannerQR } from '@/src/ui/ui_resguardante/Resg_ScannerQR';
+import { Resg_Account } from '@/src/ui/ui_resguardante/Resg_Account';
 
 const Tab = createBottomTabNavigator();
 
-type MainTabNavigatorProps = {
-  route: RouteProp<RootStackParamList, 'MainApp'>;
-};
+type Resg_MainTabNavigatorRouteProp = RouteProp<
+  RootStackParamList,
+  'Resg_MainTabNavigator'
+>;
 
-export function MainTabNavigator({ route }: MainTabNavigatorProps) {
-  console.log('MainTabNavigator route.params:', route?.params);
+export function Resg_MainTabNavigator() {
   const insets = useSafeAreaInsets();
+  const route = useRoute<Resg_MainTabNavigatorRouteProp>();
+  const { loginRespuesta } = route.params;
+  const { access_token, user } = loginRespuesta;
+  console.log('Resg_MainTabNavigator route.params', access_token, user);
 
   return (
     <Tab.Navigator
@@ -47,10 +51,7 @@ export function MainTabNavigator({ route }: MainTabNavigatorProps) {
         }}
       >
         {() => (
-          <WorkPlace
-            access_token={route?.params?.access_token}
-            workCenterId={route?.params?.workCenterId}
-          />
+          <Resg_MainResguardante access_token={access_token} user={user} />
         )}
       </Tab.Screen>
 
@@ -66,22 +67,22 @@ export function MainTabNavigator({ route }: MainTabNavigatorProps) {
           ),
         }}
       >
-        {() => <QR />}
+        {() => <Resg_ScannerQR access_token={access_token} />}
       </Tab.Screen>
 
       <Tab.Screen
-        name="Resguardantes"
+        name="Mi Perfil"
         options={{
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons
-              name="account-group-outline"
+              name="account-circle-outline"
               color={color}
               size={size}
             />
           ),
         }}
       >
-        {() => <Resguardantes />}
+        {() => <Resg_Account access_token={access_token} user={user} />}
       </Tab.Screen>
     </Tab.Navigator>
   );

@@ -1,8 +1,22 @@
 export type RootStackParamList = {
   Login: undefined;
-  WorkCenters: { loginRespuesta: LoginRespuesta };
-  MainApp: { access_token: string; workCenterId: number };
-  WorkPlace: { access_token: string; workCenterId: number };
+  Header: { dataWorkPlace: DataWorkPlace };
+
+  Gest_WorkCenters: { loginRespuesta: LoginRespuesta };
+  Gest_MainTabNavigator: {
+    access_token: string;
+    user: User;
+    workCenterId: number;
+  };
+  Gest_WorkPlace: { access_token: string; workCenterId: number };
+  Gest_InfoScannerQR: { access_token: string; scannedData: string[] };
+  Gest_Resguardantes: { access_token: string; workCenterId: number };
+  Gest_InfoResguardante: { res_id_usuario: string };
+  Gest_Account: { access_token: string; user: User };
+
+  Resg_MainTabNavigator: { loginRespuesta: LoginRespuesta };
+  Resg_InfoScannerQR: { access_token: string; scannedData: string[] };
+  Resg_Account: { access_token: string; scannedData: string[] };
 };
 
 export interface LoginCredenciales {
@@ -16,8 +30,13 @@ export interface LoginRespuesta {
   user: {
     usuario_nombre: string;
     usuario_correo: string;
-    usurio_id_rol: number;
+    usuario_id_rol: number;
   };
+}
+
+export interface DataWorkPlace {
+  image: any;
+  title: string;
 }
 
 export interface Access_token {
@@ -30,6 +49,12 @@ export interface LogoutCredenciales {
 
 export interface LogoutRespuesta {
   message: string;
+}
+
+export interface User {
+  usuario_nombre: string;
+  usuario_correo: string;
+  usuario_id_rol: number;
 }
 
 export interface DashboardWorkPlace {
@@ -68,6 +93,19 @@ export interface DashboardWorkPlace {
     para_bien_nombre: string;
   };
 }
+export interface Stats {
+  bienes_registrados: number;
+  gestores_asignados: number;
+  areas_asociadas: number;
+  resguardantes_registrados: number;
+}
+
+export interface Notification {
+  id_traspaso: number;
+  bien_nombre: string;
+  emisor: string;
+  receptor: string;
+}
 
 export interface UltimosMovimientos {
   tipo: string;
@@ -77,11 +115,35 @@ export interface UltimosMovimientos {
   area: string;
 }
 
-export interface Stats {
-  bienes_registrados: number;
-  gestores_asignados: number;
-  areas_asociadas: number;
-  resguardantes_registrados: number;
+export interface Resguardante {
+  res_nombre: string;
+  res_apellidos: string;
+  res_puesto: string;
+  res_correo: string;
+  res_telefono: string;
+  res_departamento: string;
+  res_id_usuario: string;
+  res_rfc: string;
+  res_curp: string;
+  id_oficina: string;
+}
+
+export interface DataBien {
+  bien_codigo: string;
+  bien_estado: string;
+  bien_ubicacion_actual: string;
+  bien_marca: string;
+  bien_modelo: string;
+  bien_serie: string;
+  bien_descripcion: string;
+  bien_tipo_adquisicion: string;
+  bien_fecha_alta: string;
+  bien_valor_monetario: string;
+  bien_clave: string;
+  bien_y: string;
+  bien_secuencia: string;
+  bien_provedor: string;
+  bien_numero_factura: string;
 }
 
 export interface Gestor {

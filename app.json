@@ -11,22 +11,17 @@
       "supportsTablet": true,
       "requireFullScreen": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "Esta aplicación utiliza la cámara para escanear códigos QR.",
         "ITSAppUsesNonExemptEncryption": false
       },
       "bundleIdentifier": "com.robert0vazquez.RAFHMobile"
     },
     "android": {
-      "permissions": [
-        "android.permission.CAMERA"
-      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon_rafh.png",
         "backgroundColor": "#25A4D6"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.robert0vazquez.RAFHMobile",
-      "usesCleartextTraffic": true
+      "package": "com.robert0vazquez.RAFHMobile"
     },
     "web": {
       "favicon": "./assets/icon_rafh.png"
@@ -35,7 +30,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera"
+          "cameraPermission": "Para poder escanear códigos QR, necesitamos acceso a tu cámara."
         }
       ],
       [

@@ -1,7 +1,5 @@
 import { Access_token, DashboardWorkPlace } from '@/src/models/types';
 
-//const API_BASE_URL = 'http://192.168.3.33:8080/api';
-
 /**
  * @param credenciales - El token del usuario para solicitar la informacion del dashboard
  * @returns Una promesa que se resuelve con el token, regresa la informacion del dashboard

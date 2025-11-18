@@ -2,39 +2,20 @@ import '@/global.css';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import * as ScreenOrientation from 'expo-screen-orientation';
-import { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 
 import { Login } from '@/src/ui/login';
-import { WorkCenters } from '@/src/ui/workCenters';
-import { MainTabNavigator } from '@/src/navigation/mainTabNavigator';
-import { InfoResguardante } from '@/src/ui/infoResguardante';
+import { Gest_WorkCenters } from '@/src/ui/ui_gestores/Gest_WorkCenters';
+import { Gest_MainTabNavigator } from '@/src/navigation/nav_gestores/Gest_MainTabNavigator';
+import { Resg_MainTabNavigator } from '@/src/navigation/nav_resguardante/Resg_MainTabNavigator';
+import { Gest_InfoResguardante } from '@/src/ui/ui_gestores/Gest_InfoResguardante';
+import { Gest_InfoScannerQR } from '@/src/ui/ui_gestores/Gest_InfoScannerQR';
+
+import { Resg_InfoScannerQR } from '@/src/ui/ui_resguardante/Resg_InfoScannerQR';
 
 const Stack = createStackNavigator();
 
 export default function App() {
-  const [orientation, setOrientation] = useState(0);
-
-  useEffect(() => {
-    const getInitialOrientation = async () => {
-      const orientationInfo = await ScreenOrientation.getOrientationAsync();
-      setOrientation(orientationInfo);
-    };
-
-    getInitialOrientation();
-
-    const subscription = ScreenOrientation.addOrientationChangeListener(
-      (event) => {
-        setOrientation(event.orientationInfo.orientation);
-      },
-    );
-
-    return () => {
-      ScreenOrientation.removeOrientationChangeListener(subscription);
-    };
-  }, []);
-
   return (
     <SafeAreaProvider>
       <StatusBar style="auto" />
@@ -46,29 +27,52 @@ export default function App() {
               headerShown: false,
             }}
           >
-            {(props) => <Login {...props} orientation={orientation} />}
+            {(props) => <Login {...props} />}
           </Stack.Screen>
 
           <Stack.Screen
-            name="WorkCenters"
+            name="Gest_WorkCenters"
             options={{
               headerShown: false,
             }}
           >
-            {(props) => <WorkCenters {...props} orientation={orientation} />}
-          </Stack.Screen>
-
-          <Stack.Screen name="MainApp" options={{ headerShown: false }}>
-            {(props) => (
-              <MainTabNavigator {...props} orientation={orientation} />
-            )}
+            {(props) => <Gest_WorkCenters {...props} />}
           </Stack.Screen>
 
           <Stack.Screen
-            name="InfoResguardante"
-            component={InfoResguardante}
+            name="Gest_MainTabNavigator"
             options={{ headerShown: false }}
-          />
+          >
+            {(props) => <Gest_MainTabNavigator {...props} />}
+          </Stack.Screen>
+
+          <Stack.Screen
+            name="Gest_InfoResguardante"
+            options={{ headerShown: false }}
+          >
+            {(props) => <Gest_InfoResguardante {...props} />}
+          </Stack.Screen>
+
+          <Stack.Screen
+            name="Gest_InfoScannerQR"
+            options={{ headerShown: false }}
+          >
+            {(props) => <Gest_InfoScannerQR {...props} />}
+          </Stack.Screen>
+
+          <Stack.Screen
+            name="Resg_MainTabNavigator"
+            options={{ headerShown: false }}
+          >
+            {(props) => <Resg_MainTabNavigator {...props} />}
+          </Stack.Screen>
+
+          <Stack.Screen
+            name="Resg_InfoScannerQR"
+            options={{ headerShown: false }}
+          >
+            {(props) => <Resg_InfoScannerQR {...props} />}
+          </Stack.Screen>
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

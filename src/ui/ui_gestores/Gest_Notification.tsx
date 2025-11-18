@@ -14,7 +14,7 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { StyleGlobal } from '@/src/components/styleGlobal';
+import { StyleGlobal } from '@/src/components/StyleGlobal';
 import React, { useState } from 'react';
 import { TextInput, DefaultTheme } from 'react-native-paper';
 import DropDownPicker from 'react-native-dropdown-picker';
