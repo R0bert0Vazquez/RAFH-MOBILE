@@ -131,9 +131,18 @@ export function Login() {
   const getButtonContent = () => {
     if (isSuccess) {
       return (
-        <Text className="text-white text-center font-bold">
-          Inicio de sesión exitoso
-        </Text>
+        <>
+          <View className="flex-row items-center justify-center">
+            <MaterialCommunityIcons
+              name="check-decagram-outline"
+              size={24}
+              color="white"
+            />
+            <Text className="text-white text-center font-bold ml-2">
+              Inicio de sesión exitoso
+            </Text>
+          </View>
+        </>
       );
     }
     if (isLoading) {

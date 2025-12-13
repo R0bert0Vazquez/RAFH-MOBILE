@@ -20,10 +20,13 @@ import { StyleGlobal } from '@/src/components/StyleGlobal';
 import { Header } from '@/src/components/Header';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Access_token, RootStackParamList } from '@/src/models/types';
-// import { SubmitInventory } from '@/src/controllers/controllers_gestor/scannerQR.controller';
+import { RootStackParamList } from '@/src/models/types';
+
+import { Select_Oficina_DropDown } from '@/src/components/Select_Oficina_DropDownPicker';
+
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { CompararBienes } from '@/src/models/types_BienesResponse';
 
 const Icon_itch = require('@/assets/icon_itch.png');
 
@@ -32,7 +35,16 @@ const dataWorkPlace = {
   image: Icon_itch,
 };
 
-const StartScanningCard = ({ onPress }: { onPress: () => void }) => (
+// --- Tarjeta de Inicio (Modificada con Selector de Oficina) ---
+const StartScanningCard = ({
+  onPressStart,
+  onPressSelectOffice,
+  selectedOffice,
+}: {
+  onPressStart: () => void;
+  onPressSelectOffice: () => void;
+  selectedOffice: { nombre: string } | null;
+}) => (
   <View className="w-full md:w-10/12 lg:w-3/4">
     <View className="bg-white dark:bg-[#14161A] border-2 border-gray-200 dark:border-1 dark:border-gray-700 rounded-xl shadow-lg p-6 items-center">
       <MaterialCommunityIcons
@@ -45,13 +57,81 @@ const StartScanningCard = ({ onPress }: { onPress: () => void }) => (
         Levantamiento de Inventario
       </Text>
       <Text className="text-base md:text-xl lg:text-xl text-center text-gray-500 dark:text-slate-400 mb-6">
-        Presiona el botón para comenzar a escanear los códigos QR de los bienes.
+        Selecciona la oficina y presiona el botón para comenzar a escanear.
       </Text>
+
+      {/* --- SECCIÓN DE OFICINA --- */}
+      <View className="w-full mb-4">
+        {selectedOffice ? (
+          <Pressable
+            onPress={onPressSelectOffice}
+            className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-3 flex-row items-center"
+          >
+            <View className="bg-blue-500 rounded-full p-2 mr-3">
+              <MaterialCommunityIcons
+                name="office-building"
+                size={20}
+                color="white"
+              />
+            </View>
+            <View className="flex-1">
+              <Text className="text-xs text-blue-600 dark:text-blue-400 font-bold uppercase">
+                Oficina Seleccionada
+              </Text>
+              <Text
+                className="text-gray-800 dark:text-white font-bold text-base"
+                numberOfLines={1}
+              >
+                {selectedOffice.nombre}
+              </Text>
+            </View>
+            <MaterialCommunityIcons name="pencil" size={18} color="#2563eb" />
+          </Pressable>
+        ) : (
+          <Pressable
+            onPress={onPressSelectOffice}
+            className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl p-3 flex-row items-center"
+          >
+            <View className="bg-orange-500 rounded-full p-2 mr-3">
+              <MaterialCommunityIcons name="alert" size={20} color="white" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-gray-800 dark:text-white font-bold text-base uppercase">
+                Seleccionar Oficina
+              </Text>
+              <Text className="text-xs text-orange-600 dark:text-orange-400">
+                Requerido para comenzar
+              </Text>
+            </View>
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={24}
+              color="#ea580c"
+            />
+          </Pressable>
+        )}
+      </View>
+
+      {/* --- Botón de Empezar (Controlado) --- */}
       <Pressable
-        onPress={onPress}
-        className="bg-blue-500 dark:bg-blue-600 rounded-lg p-4 w-full shadow-md active:bg-blue-700"
+        onPress={onPressStart}
+        className={`${
+          selectedOffice
+            ? 'bg-blue-500 dark:bg-blue-600 active:bg-blue-700'
+            : 'bg-gray-300 dark:bg-gray-700'
+        } rounded-lg p-4 w-full shadow-md flex-row justify-center items-center`}
       >
-        <Text className="text-white md:text-xl lg:text-xl text-center font-bold text-lg">
+        <MaterialCommunityIcons
+          name={selectedOffice ? 'qrcode-scan' : 'lock'}
+          size={20}
+          color={selectedOffice ? 'white' : '#666'}
+          style={{ marginRight: 10 }}
+        />
+        <Text
+          className={`${
+            selectedOffice ? 'text-white' : 'text-gray-500'
+          } md:text-xl lg:text-xl text-center font-bold text-lg`}
+        >
           Empezar Levantamiento
         </Text>
       </Pressable>
@@ -65,23 +145,29 @@ const ScanningCard = ({
   scanned,
   lastScannedData,
   onStop,
+  onCancel,
   isSubmitting,
+  isModalOpen,
 }: {
   facing: CameraType;
   handleBarCodeScanned: (result: BarcodeScanningResult) => void;
   scanned: boolean;
   lastScannedData: string | null;
   onStop: () => void;
+  onCancel: () => void;
   isSubmitting: boolean;
+  isModalOpen: boolean;
 }) => (
   <View className="w-full md:w-10/12 lg:w-3/4">
     {/* --- El Cuadro de la Cámara --- */}
-    {/* <View className="w-full h-72 md:h-96 lg:h-[450px] bg-black dark:bg-gray-900 rounded-xl overflow-hidden shadow-2xl border-2 border-gray-300 dark:border-gray-700"> */}
     <View className="w-full h-72 md:h-96 lg:h-[300px] bg-black dark:bg-gray-900 rounded-xl overflow-hidden shadow-2xl border-2 border-gray-300 dark:border-gray-700">
       <CameraView
         style={{ flex: 1 }}
         facing={facing}
-        onBarcodeScanned={handleBarCodeScanned}
+        // --- LOGICA CRITICA AQUI ---
+        // Si hay un modal abierto, pasamos undefined.
+        // Esto le dice a la cámara: "Deja de procesar QR aunque sigas mostrando video"
+        onBarcodeScanned={isModalOpen ? undefined : handleBarCodeScanned}
         barcodeScannerSettings={{
           barcodeTypes: ['qr'],
         }}
@@ -132,18 +218,17 @@ const ScanningCard = ({
       )}
     </View>
 
-    {/* --- Botón de Terminar (MODIFICADO) --- */}
+    {/* --- Botón de Terminar --- */}
     <Pressable
       onPress={onStop}
-      disabled={isSubmitting} // Deshabilitar mientras se envía
+      disabled={isSubmitting || isModalOpen} // Deshabilitar mientras se envía
       className={`rounded-lg p-4 w-full shadow-md mt-4 ${
         isSubmitting
-          ? 'bg-gray-400 dark:bg-gray-600' // Estilo deshabilitado
-          : 'bg-red-600 dark:bg-red-700 active:bg-red-800' // Estilo normal
+          ? 'bg-gray-400 dark:bg-gray-600 opacity-50' // Estilo deshabilitado
+          : 'bg-green-600 dark:bg-green-700 active:bg-green-800' // Estilo normal
       }`}
     >
       {isSubmitting ? (
-        // Mostrar spinner de carga
         <View className="flex-row items-center justify-center">
           <ActivityIndicator size="small" color="#fff" />
           <Text className="text-white text-center font-bold text-lg md:text-xl lg:text-xl ml-3">
@@ -151,11 +236,24 @@ const ScanningCard = ({
           </Text>
         </View>
       ) : (
-        // Texto normal
         <Text className="text-white text-center font-bold text-lg md:text-xl lg:text-xl">
           Terminar Levantamiento
         </Text>
       )}
+    </Pressable>
+
+    <Pressable
+      onPress={onCancel}
+      disabled={isSubmitting || isModalOpen}
+      className={`rounded-lg p-4 w-full shadow-md mt-4 ${
+        isSubmitting
+          ? 'bg-gray-400 dark:bg-gray-600 opacity-50' // Estilo deshabilitado
+          : 'bg-gray-600 dark:bg-gray-700 active:bg-gray-800' // Estilo normal
+      }`}
+    >
+      <Text className="text-white text-center font-bold text-lg md:text-xl lg:text-xl">
+        Cancelar Levantamiento
+      </Text>
     </Pressable>
   </View>
 );
@@ -249,7 +347,67 @@ const ConfirmStopModal = ({
   </Modal>
 );
 
-// --- 6. NUEVO SUB-COMPONENTE: Modal de Información (para Éxito/Error) ---
+const ConfirmCancelModal = ({
+  visible,
+  onConfirm,
+  onCancel,
+  itemCount,
+}: {
+  visible: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+  itemCount: number;
+}) => (
+  <Modal visible={visible} transparent={true} animationType="fade">
+    <View className="flex-1 justify-center items-center bg-black/60 px-5">
+      <View className="w-full max-w-lg bg-white dark:bg-[#14161A] border-2 border-red-200 dark:border-red-900 rounded-xl shadow-xl p-6">
+        <View className="items-center mb-4">
+          <MaterialCommunityIcons
+            name="alert-remove-outline"
+            size={50}
+            color="#E53E3E" // Rojo para indicar peligro/borrado
+          />
+        </View>
+
+        <Text className="text-gray-700 dark:text-slate-300 text-xl md:text-2xl font-bold text-center mb-2">
+          ¿Cancelar Levantamiento?
+        </Text>
+
+        <Text className="text-gray-600 dark:text-slate-400 text-base md:text-lg text-center mb-6">
+          Si cancelas ahora,{' '}
+          <Text className="font-bold text-red-500">
+            se perderán los {itemCount} bienes
+          </Text>{' '}
+          que has escaneado hasta el momento.
+        </Text>
+
+        {/* --- Fila de Botones --- */}
+        <View className="flex-row justify-between">
+          {/* Botón de Regresar (No cancelar) */}
+          <Pressable
+            onPress={onCancel}
+            className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-lg p-4 mr-2 active:bg-gray-300 dark:active:bg-gray-600"
+          >
+            <Text className="text-gray-800 dark:text-white text-center font-bold text-lg">
+              No, Continuar
+            </Text>
+          </Pressable>
+
+          {/* Botón de Confirmar Cancelación (Destructivo) */}
+          <Pressable
+            onPress={onConfirm}
+            className="flex-1 bg-red-500 dark:bg-red-600 rounded-lg p-4 ml-2 active:bg-red-700"
+          >
+            <Text className="text-white text-center font-bold text-lg">
+              Sí, Borrar
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+    </View>
+  </Modal>
+);
+
 const InfoAlertModal = ({
   visible,
   title,
@@ -261,13 +419,15 @@ const InfoAlertModal = ({
   message: string;
   onClose: () => void;
 }) => {
-  // Elegir ícono y color basado en el título
   const getIcon = () => {
     if (title.includes('Error')) {
       return { name: 'alert-circle-outline', color: '#E53E3E' }; // Rojo
     }
     if (title.includes('Enviado')) {
       return { name: 'check-circle-outline', color: '#38A169' }; // Verde
+    }
+    if (title.includes('Seleccionar')) {
+      return { name: 'selection-search', color: '#E53E3E' }; // Rojo
     }
     return { name: 'information-outline', color: '#25A4D6' }; // Azul
   };
@@ -293,7 +453,6 @@ const InfoAlertModal = ({
             {message}
           </Text>
 
-          {/* Botón de Aceptar */}
           <Pressable
             onPress={onClose}
             className="bg-blue-500 dark:bg-blue-600 rounded-lg p-4 w-full shadow-md active:bg-blue-700"
@@ -317,20 +476,37 @@ export function Gest_ScannerQR({ access_token }: { access_token: string }) {
   const [facing] = useState<CameraType>('back');
   const [permission, requestPermission] = useCameraPermissions();
 
-  // --- Estados ---
-  const [isScanning, setIsScanning] = useState(false); // Controla si la cámara está activa
-  const [scanned, setScanned] = useState(false); // Controla el delay de 3 seg
-  const [scannedData, setScannedData] = useState<string[]>([]); // Lista de QRs
-  const [lastScannedData, setLastScannedData] = useState<string | null>(null); // Para la UI
-  const [isSubmitting, setIsSubmitting] = useState(false); // NUEVO ESTADO DE CARGA
+  // --- NUEVO: Estado de Oficina Seleccionada ---
+  const [selectedOffice, setSelectedOffice] = useState<{
+    id: number;
+    nombre: string;
+    codigo: string;
+  } | null>(null);
+  const [officeModalVisible, setOfficeModalVisible] = useState(false);
 
-  // --- 7. NUEVOS ESTADOS para los Modales ---
+  // --- Estados ---
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanned, setScanned] = useState(false);
+  const [scannedData, setScannedData] = useState<string[]>([]);
+  const [lastScannedData, setLastScannedData] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const [alertInfo, setAlertInfo] = useState({
     visible: false,
     title: '',
     message: '',
   });
+
+  // --- CALCULO CRITICO ---
+  // Esta variable determina si hay algun modal que tape la pantalla
+  // Si es TRUE, bloqueamos el escaneo
+  const isAnyModalOpen =
+    showConfirmModal ||
+    showCancelModal ||
+    alertInfo.visible ||
+    officeModalVisible;
 
   if (!permission) {
     return <View />;
@@ -362,10 +538,8 @@ export function Gest_ScannerQR({ access_token }: { access_token: string }) {
             </View>
           </View>
 
-          {/* Contenedor de permisos */}
           <View className="w-10/12 md:w-6/12 lg:w-5/12">
             <View className="bg-white dark:bg-[#14161A] border-2 border-gray-200 dark:border-1 dark:border-gray-700 rounded-xl shadow-xl ios:shadow-sm shadow-gray-600 p-6">
-              {/* Ícono de cámara */}
               <View className="items-center mb-4">
                 <MaterialCommunityIcons
                   name="camera"
@@ -403,38 +577,49 @@ export function Gest_ScannerQR({ access_token }: { access_token: string }) {
     );
   }
 
-  const handleBarCodeScanned = (result: BarcodeScanningResult) => {
-    // 1. Si ya estamos en el período de "enfriamiento", no hacer nada.
-    if (scanned) return;
+  // --- Handlers ---
+  const handleStartScanning = () => {
+    if (!selectedOffice) {
+      // setAlertInfo({
+      //   visible: true,
+      //   title: 'Seleccionar Oficina',
+      //   message: 'Debes seleccionar una oficina antes de comenzar.',
+      // });
+      return;
+    }
 
-    // 2. Activar el enfriamiento INMEDIATAMENTE
+    setIsScanning(true);
+    setLastScannedData(null);
+  };
+
+  const handleBarCodeScanned = (result: BarcodeScanningResult) => {
+    // DOBLE SEGURIDAD: Si por alguna razón la propiedad de CameraView no actualizó a tiempo,
+    // este return previene la lógica.
+    if (scanned || isAnyModalOpen) return;
     setScanned(true);
 
-    // 3. Procesar los datos
     const data = result.data;
-    console.log('\nQR Escaneado:', data);
-
-    // 4. Actualizar la UI de "Último Escaneo" SIEMPRE
+    // console.log('\nQR Escaneado:', data);
     setLastScannedData(data);
 
-    // Usamos la función de actualización para acceder al estado MÁS RECIENTE.
     setScannedData((prevData) => {
-      // Validamos contra 'prevData' (el estado fresco y garantizado)
       if (prevData.includes(data)) {
-        // Si ya existe, solo logueamos y devolvemos el estado anterior (sin cambios).
-        console.log('Dato duplicado, no se agregará:', data);
+        // console.log('Dato duplicado, no se agregará:', data);
+        setAlertInfo({
+          visible: true,
+          title: 'QR ya escaneado',
+          message: `El QR "${data}" ya ha sido escaneado.`,
+        });
         return prevData;
       } else {
-        // Si es nuevo, lo añadimos al inicio de la lista y devolvemos el nuevo arreglo.
-        console.log('Dato NUEVO, agregando:', data);
+        // console.log('Dato NUEVO, agregando:', data);
         return [data, ...prevData];
       }
     });
 
     setTimeout(() => {
       setScanned(false);
-      // setLastScannedData(null); // Descomenta si quieres que se limpie
-    }, 3000);
+    }, 2000);
   };
 
   const handleSubmitInventory = async () => {
@@ -452,12 +637,6 @@ export function Gest_ScannerQR({ access_token }: { access_token: string }) {
 
     setIsSubmitting(true);
     try {
-      const credenciales: Access_token = {
-        access_token: access_token,
-      };
-
-      // const responseData = await SubmitInventory(credenciales, scannedData);
-
       setAlertInfo({
         visible: true,
         title: 'Levantamiento Enviado',
@@ -478,13 +657,25 @@ export function Gest_ScannerQR({ access_token }: { access_token: string }) {
 
   const handleCloseAlert = () => {
     if (alertInfo.title.includes('Enviado')) {
+      if (!selectedOffice) return;
+
+      const payload: CompararBienes = {
+        id_oficina: selectedOffice.id,
+        claves_escaneadas: scannedData as any,
+      };
+
+      // console.log('Payload:', payload);
+
       setAlertInfo({ ...alertInfo, visible: false });
-
-      navigation.navigate('Gest_InfoScannerQR', { access_token, scannedData });
-
+      navigation.navigate('Gest_InfoScannerQR', {
+        access_token,
+        payload,
+        selectedOffice,
+      });
       setIsScanning(false);
       setLastScannedData(null);
       setScannedData([]);
+      // Opcional: setSelectedOffice(null); si quieres que vuelvan a seleccionar
     } else {
       setAlertInfo({ ...alertInfo, visible: false });
     }
@@ -494,7 +685,33 @@ export function Gest_ScannerQR({ access_token }: { access_token: string }) {
     setShowConfirmModal(true);
   };
 
-  // --- Render Principal ---
+  // 1. Al presionar el botón "Cancelar Levantamiento" en la UI
+  const handleCancelScanning = () => {
+    // Si no hay nada escaneado, simplemente salimos del modo escaneo sin preguntar
+    if (scannedData.length === 0) {
+      setIsScanning(false);
+      setLastScannedData(null);
+      return;
+    }
+    // Si hay datos, mostramos el modal de advertencia
+    setShowCancelModal(true);
+  };
+
+  // 2. Al confirmar que SÍ quiere cancelar (Botón Rojo del Modal)
+  const handleConfirmCancel = () => {
+    setShowCancelModal(false); // Cierra modal
+    setIsScanning(false); // Oculta la cámara
+    setScannedData([]); // Borra la lista
+    setLastScannedData(null); // Borra el último escaneo
+
+    // Opcional: Feedback visual de que se canceló
+    // setAlertInfo({
+    //   visible: true,
+    //   title: 'Cancelado',
+    //   message: 'El levantamiento ha sido cancelado y los datos descartados.'
+    // });
+  };
+
   return (
     <StyleGlobal>
       <View
@@ -518,10 +735,9 @@ export function Gest_ScannerQR({ access_token }: { access_token: string }) {
               <View className="items-center px-4 md:px-6 py-4">
                 {!isScanning ? (
                   <StartScanningCard
-                    onPress={() => {
-                      setIsScanning(true);
-                      setLastScannedData(null);
-                    }}
+                    onPressStart={handleStartScanning}
+                    onPressSelectOffice={() => setOfficeModalVisible(true)}
+                    selectedOffice={selectedOffice}
                   />
                 ) : (
                   <ScanningCard
@@ -530,7 +746,9 @@ export function Gest_ScannerQR({ access_token }: { access_token: string }) {
                     scanned={scanned}
                     lastScannedData={lastScannedData}
                     onStop={handleStopScanning}
+                    onCancel={handleCancelScanning}
                     isSubmitting={isSubmitting}
+                    isModalOpen={isAnyModalOpen} // <--- PASAMOS LA BANDERA AQUI
                   />
                 )}
               </View>
@@ -545,7 +763,7 @@ export function Gest_ScannerQR({ access_token }: { access_token: string }) {
           ListEmptyComponent={
             <Text className="text-center text-xl md:text-2xl lg:text-2xl  text-gray-600 dark:text-slate-400 mt-4 px-6">
               {!isScanning
-                ? 'Presiona "Empezar Levantamiento" para escanear tu primer QR.'
+                ? 'Selecciona una oficina y presiona "Empezar Levantamiento".'
                 : 'Esperando primer escaneo...'}
             </Text>
           }
@@ -561,11 +779,27 @@ export function Gest_ScannerQR({ access_token }: { access_token: string }) {
         isSubmitting={isSubmitting}
       />
 
+      <ConfirmCancelModal
+        visible={showCancelModal}
+        onCancel={() => setShowCancelModal(false)}
+        onConfirm={handleConfirmCancel}
+        itemCount={scannedData.length}
+      />
+
       <InfoAlertModal
         visible={alertInfo.visible}
         title={alertInfo.title}
         message={alertInfo.message}
         onClose={handleCloseAlert}
+      />
+
+      <Select_Oficina_DropDown
+        visible={officeModalVisible}
+        onClose={() => setOfficeModalVisible(false)}
+        access_token={access_token}
+        onSelect={(oficina) => {
+          setSelectedOffice(oficina);
+        }}
       />
     </StyleGlobal>
   );

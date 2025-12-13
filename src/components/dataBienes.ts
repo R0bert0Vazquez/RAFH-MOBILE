@@ -1,4 +1,4 @@
-import { DataBien } from '@/src/models/types';
+import { DataBien } from '@/src/models/types_BienesResponse';
 
 /**
  * Este es tu arreglo de 'dataBienes' actualizado para que coincida

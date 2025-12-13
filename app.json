@@ -18,7 +18,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon_rafh.png",
-        "backgroundColor": "#25A4D6"
+        "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.robert0vazquez.RAFHMobile"
@@ -42,7 +42,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#25A4D6",
+          "backgroundColor": "#ffffff",
           "image": "./assets/icon_rafh.png",
           "dark": {
             "image": "./assets/icon_rafh.png",

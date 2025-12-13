@@ -321,7 +321,7 @@ export function Resg_Account({
               </Text>
 
               {/* Botón de Modificar */}
-              <Pressable
+              {/* <Pressable
                 onPress={handleOpenEditModal}
                 className="flex-row items-center bg-blue-500 dark:bg-blue-600 rounded-lg py-3 px-6 mt-5 shadow-md active:bg-blue-700"
               >
@@ -333,7 +333,7 @@ export function Resg_Account({
                 <Text className="text-white font-bold text-base ml-2">
                   Modificar Perfil
                 </Text>
-              </Pressable>
+              </Pressable> */}
             </View>
 
             {/* --- 2. Tarjeta de Información de Contacto --- */}

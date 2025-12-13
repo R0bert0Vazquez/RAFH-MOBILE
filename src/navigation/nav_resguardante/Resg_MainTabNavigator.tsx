@@ -1,15 +1,18 @@
-import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RouteProp, useRoute } from '@react-navigation/native';
-import { RootStackParamList } from '@/src/models/types';
+import { RootStackParamList } from '@/src/models/types'; // Importa ResgTabParamList
+import { ResgTabParamList } from '@/src/navigation/nav_resguardante/types';
 
 import { Resg_MainResguardante } from '@/src/ui/ui_resguardante/Resg_MainResguardante';
+import { Resg_Dashboard } from '@/src//ui/ui_resguardante/Resg_Dashboard';
+import { Resg_Movimientos } from '@/src/ui/ui_resguardante/Resg_Movimientos';
+import { Resg_Transferencias } from '@/src/ui/ui_resguardante/Resg_Transferencias';
 import { Resg_ScannerQR } from '@/src/ui/ui_resguardante/Resg_ScannerQR';
 import { Resg_Account } from '@/src/ui/ui_resguardante/Resg_Account';
 
-const Tab = createBottomTabNavigator();
+const Tab = createBottomTabNavigator<ResgTabParamList>(); // Tipifica el Tab Navigator
 
 type Resg_MainTabNavigatorRouteProp = RouteProp<
   RootStackParamList,
@@ -34,8 +37,6 @@ export function Resg_MainTabNavigator() {
           paddingLeft: insets.left,
           paddingRight: insets.right,
         },
-        tabBarActiveTintColor: '#25A4D6',
-        tabBarInactiveTintColor: 'gray',
       }}
     >
       <Tab.Screen
@@ -50,12 +51,53 @@ export function Resg_MainTabNavigator() {
           ),
         }}
       >
+        {() => <Resg_Dashboard access_token={access_token} user={user} />}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="Mis Bienes"
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons
+              name="archive-eye-outline"
+              color={color}
+              size={size}
+            />
+          ),
+        }}
+      >
         {() => (
           <Resg_MainResguardante access_token={access_token} user={user} />
         )}
       </Tab.Screen>
 
       <Tab.Screen
+        name="Movimientos"
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons
+              name="swap-horizontal"
+              color={color}
+              size={size}
+            />
+          ),
+        }}
+      >
+        {() => <Resg_Movimientos access_token={access_token} user={user} />}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="Transferencias"
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="transfer" color={color} size={size} />
+          ),
+        }}
+      >
+        {() => <Resg_Transferencias access_token={access_token} user={user} />}
+      </Tab.Screen>
+
+      {/* <Tab.Screen
         name="Escanear QR"
         options={{
           tabBarIcon: ({ color, size }) => (
@@ -68,7 +110,7 @@ export function Resg_MainTabNavigator() {
         }}
       >
         {() => <Resg_ScannerQR access_token={access_token} />}
-      </Tab.Screen>
+      </Tab.Screen> */}
 
       <Tab.Screen
         name="Mi Perfil"

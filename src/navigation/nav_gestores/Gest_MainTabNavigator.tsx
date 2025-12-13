@@ -7,6 +7,7 @@ import { RootStackParamList } from '@/src/models/types';
 
 import { Gest_WorkPlace } from '@/src/ui/ui_gestores/Gest_WorkPlace';
 import { Gest_ScannerQR } from '@/src/ui/ui_gestores/Gest_ScannerQR';
+import { Gest_GenerateQR } from '@/src/ui/ui_gestores/Gest_GenerateQR';
 import { Gest_Resguardantes } from '@/src/ui/ui_gestores/Gest_Resguardantes';
 import { Gest_Account } from '@/src/ui/ui_gestores/Gest_Account';
 
@@ -17,7 +18,7 @@ type MainTabNavigatorProps = {
 };
 
 export function Gest_MainTabNavigator({ route }: MainTabNavigatorProps) {
-  console.log('MainTabNavigator route.params:', route?.params);
+  // console.log('MainTabNavigator route.params:', route?.params);
   const insets = useSafeAreaInsets();
 
   return (
@@ -31,9 +32,6 @@ export function Gest_MainTabNavigator({ route }: MainTabNavigatorProps) {
           paddingLeft: insets.left,
           paddingRight: insets.right,
         },
-        // tabBarActiveTintColor: '#25A4D6',
-        // tabBarActiveTintColor: '#3B82F6',
-        // tabBarInactiveTintColor: 'gray',
       }}
     >
       <Tab.Screen
@@ -69,6 +67,21 @@ export function Gest_MainTabNavigator({ route }: MainTabNavigatorProps) {
         }}
       >
         {() => <Gest_ScannerQR access_token={route?.params?.access_token} />}
+      </Tab.Screen>
+
+      <Tab.Screen
+        name="Generar QR"
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons
+              name="qrcode-edit"
+              color={color}
+              size={size}
+            />
+          ),
+        }}
+      >
+        {() => <Gest_GenerateQR access_token={route?.params?.access_token} />}
       </Tab.Screen>
 
       <Tab.Screen

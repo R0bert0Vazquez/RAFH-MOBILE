@@ -1,3 +1,5 @@
+import { CompararBienes } from '@/src/models/types_BienesResponse';
+
 export type RootStackParamList = {
   Login: undefined;
   Header: { dataWorkPlace: DataWorkPlace };
@@ -9,12 +11,23 @@ export type RootStackParamList = {
     workCenterId: number;
   };
   Gest_WorkPlace: { access_token: string; workCenterId: number };
-  Gest_InfoScannerQR: { access_token: string; scannedData: string[] };
+  Gest_InfoScannerQR: {
+    access_token: string;
+    payload: CompararBienes;
+    selectedOffice: {
+      id: number;
+      nombre: string;
+      codigo: string;
+    };
+  };
+  Gest_ScannerQR: { access_token: string };
+  Gest_GenerateQR: { access_token: string };
   Gest_Resguardantes: { access_token: string; workCenterId: number };
-  Gest_InfoResguardante: { res_id_usuario: string };
+  Gest_InfoResguardante: { id_resguardante: number; access_token: string };
   Gest_Account: { access_token: string; user: User };
 
   Resg_MainTabNavigator: { loginRespuesta: LoginRespuesta };
+  Resg_MainResguardante: { access_token: string; user: User };
   Resg_InfoScannerQR: { access_token: string; scannedData: string[] };
   Resg_Account: { access_token: string; scannedData: string[] };
 };
@@ -27,11 +40,7 @@ export interface LoginCredenciales {
 export interface LoginRespuesta {
   message: string;
   access_token: string;
-  user: {
-    usuario_nombre: string;
-    usuario_correo: string;
-    usuario_id_rol: number;
-  };
+  user: User;
 }
 
 export interface DataWorkPlace {
@@ -52,6 +61,7 @@ export interface LogoutRespuesta {
 }
 
 export interface User {
+  id: number;
   usuario_nombre: string;
   usuario_correo: string;
   usuario_id_rol: number;
@@ -70,23 +80,20 @@ export interface DashboardWorkPlace {
   ultima_transferencia: {
     nombre: string;
   };
-  notificaciones: [
-    {
-      id_traspaso: number;
-      bien_nombre: string;
-      emisor: string;
-      receptor: string;
-    },
-  ];
-  ultimos_movimientos: [
-    {
-      tipo: string;
-      bien_involucrado: string;
-      gestor_encargado: string;
-      resguardante_responsable: string;
-      area: string;
-    },
-  ];
+  notificaciones: {
+    id_traspaso: number;
+    bien_nombre: string;
+    emisor: string;
+    receptor: string;
+  }[];
+
+  ultimos_movimientos: {
+    tipo: string;
+    bien_involucrado: string;
+    gestor_encargado: string;
+    resguardante_responsable: string;
+    area: string;
+  };
 
   proximo_mantenimiento: {
     fecha_programada: string;
@@ -126,24 +133,6 @@ export interface Resguardante {
   res_rfc: string;
   res_curp: string;
   id_oficina: string;
-}
-
-export interface DataBien {
-  bien_codigo: string;
-  bien_estado: string;
-  bien_ubicacion_actual: string;
-  bien_marca: string;
-  bien_modelo: string;
-  bien_serie: string;
-  bien_descripcion: string;
-  bien_tipo_adquisicion: string;
-  bien_fecha_alta: string;
-  bien_valor_monetario: string;
-  bien_clave: string;
-  bien_y: string;
-  bien_secuencia: string;
-  bien_provedor: string;
-  bien_numero_factura: string;
 }
 
 export interface Gestor {

@@ -13,7 +13,9 @@ import {
   UIManager,
 } from 'react-native';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
+import { Access_token, RootStackParamList } from '@/src/models/types';
 
 import { StyleGlobal } from '@/src/components/StyleGlobal';
 import { Header } from '@/src/components/Header';
@@ -21,16 +23,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { TextInput, DefaultTheme } from 'react-native-paper';
 import DropDownPicker from 'react-native-dropdown-picker';
-import { DataBien } from '@/src/models/types'; // Access_token, RootStackParamList
-import {
-  dataBienes,
-  iconMap,
-  bienEstadosBg,
-  bienEstadosTexto,
-} from '@/src/components/dataBienes';
 
-// import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-// import { StackNavigationProp } from '@react-navigation/stack';
+import {
+  BienDetallado,
+  CompararBienesRespuesta,
+  LevantamientoRequest,
+  AccionSobrante,
+  SobranteDetallado,
+} from '@/src/models/types_BienesResponse';
+import {
+  compararBienes,
+  subirLevantamiento,
+} from '@/src/controllers/controllers_gestor/infoScannerQR.controller';
+
+import { iconMap } from '@/src/components/dataBienes';
+import { Select_Oficina_DropDown } from '@/src/components/Select_Oficina_DropDownPicker';
 
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
@@ -42,228 +49,6 @@ const dataWorkPlace = {
   image: Icon_itch,
 };
 
-/**
- * Este es tu arreglo de 'dataBienes' actualizado para que coincida
- * con la nueva interface de DataBien.
- * He rellenado los campos que faltaban con datos de ejemplo.
- */
-// export const dataBienes: DataBien[] = [
-//   // 1. El ejemplo original
-//   {
-//     bien_codigo: 'I060200310-93-23-00001',
-//     bien_ubicacion_actual: 'ALM',
-//     bien_marca: '" RCA "',
-//     bien_modelo: '504B/440',
-//     bien_serie: '3271',
-//     bien_descripcion:
-//       'GENERADOR DE FRECUENCIA ACUSTICA RANGO 0.01 HZ.CAT. 2154F  BODEGA # 1',
-//     bien_tipo_adquisicion: '3',
-//     bien_fecha_alta: '1993-07-13T16:47:11.000000Z',
-//     bien_valor_monetario: '1.14',
-//     bien_clave: '060200310',
-//     bien_y: '93',
-//     bien_secuencia: '00001',
-//     bien_provedor: 'SIN PROVEDOR',
-//     bien_numero_factura: '0',
-//     bien_estado: 'Activo',
-//   },
-//   // 2. Computadora
-//   {
-//     bien_codigo: 'I060200100-23-01-00015',
-//     bien_ubicacion_actual: 'ALM',
-//     bien_marca: '"DELL"',
-//     bien_modelo: 'OPTIPLEX 7090',
-//     bien_serie: 'DX-58291',
-//     bien_descripcion:
-//       'COMPUTADORA DE ESCRITORIO DELL OPTIPLEX 7090 CORE I5 16GB RAM 512GB SSD',
-//     bien_tipo_adquisicion: '1',
-//     bien_fecha_alta: '2023-08-10T10:00:00.000000Z',
-//     bien_valor_monetario: '18500.00',
-//     bien_clave: '060200100',
-//     bien_y: '23',
-//     bien_secuencia: '00015',
-//     bien_provedor: 'DELL MEXICO',
-//     bien_numero_factura: 'F-12345',
-//     bien_estado: 'Activo',
-//   },
-//   // 3. Proyector
-//   {
-//     bien_codigo: 'I060200200-22-05-00007',
-//     bien_ubicacion_actual: 'ALM',
-//     bien_marca: '"EPSON"',
-//     bien_modelo: 'POWERLITE 1781W',
-//     bien_serie: 'EP-92842',
-//     bien_descripcion: 'PROYECTOR MULTIMEDIA EPSON POWERLITE 1781W WIFI',
-//     bien_tipo_adquisicion: '3',
-//     bien_fecha_alta: '2022-03-15T11:30:00.000000Z',
-//     bien_valor_monetario: '12500.00',
-//     bien_clave: '060200200',
-//     bien_y: '22',
-//     bien_secuencia: '00007',
-//     bien_provedor: 'EPSON MEXICO',
-//     bien_numero_factura: 'F-23456',
-//     bien_estado: 'Mantenimiento',
-//   },
-//   // 4. Aire Acondicionado
-//   {
-//     bien_codigo: 'I060200300-21-02-00011',
-//     bien_ubicacion_actual: 'ALM',
-//     bien_marca: '"MABE"',
-//     bien_modelo: 'SPLIT INVERTER 2T',
-//     bien_serie: 'MB-48572',
-//     bien_descripcion: 'AIRE ACONDICIONADO TIPO MINISPLIT MABE 2 TONELADAS',
-//     bien_tipo_adquisicion: '2',
-//     bien_fecha_alta: '2021-11-20T16:00:00.000000Z',
-//     bien_valor_monetario: '8200.00',
-//     bien_clave: '060200300',
-//     bien_y: '21',
-//     bien_secuencia: '00011',
-//     bien_provedor: 'SIN PROVEDOR',
-//     bien_numero_factura: '0',
-//     bien_estado: 'Inactivo',
-//   },
-//   // 5. Impresora Láser
-//   {
-//     bien_codigo: 'I060200400-23-01-00030',
-//     bien_ubicacion_actual: 'ALM',
-//     bien_marca: '"HP"',
-//     bien_modelo: 'LASERJET PRO M404N',
-//     bien_serie: 'HP-LJ-98372',
-//     bien_descripcion: 'IMPRESORA LASER MONOCROMATICA HP M404N RED',
-//     bien_tipo_adquisicion: '1',
-//     bien_fecha_alta: '2023-01-30T14:15:00.000000Z',
-//     bien_valor_monetario: '6500.00',
-//     bien_clave: '060200400',
-//     bien_y: '23',
-//     bien_secuencia: '00030',
-//     bien_provedor: 'HP STORE',
-//     bien_numero_factura: 'F-45678',
-//     bien_estado: 'Activo',
-//   },
-//   // 6. Microscopio
-//   {
-//     bien_codigo: 'I060200500-22-09-00005',
-//     bien_ubicacion_actual: 'ALM',
-//     bien_marca: '"OLYMPUS"',
-//     bien_modelo: 'CX23',
-//     bien_serie: 'OL-CX-51512',
-//     bien_descripcion: 'MICROSCOPIO BINOCULAR OLYMPUS CX23 LED',
-//     bien_tipo_adquisicion: '4',
-//     bien_fecha_alta: '2022-09-05T09:00:00.000000Z',
-//     bien_valor_monetario: '15400.00',
-//     bien_clave: '060200500',
-//     bien_y: '22',
-//     bien_secuencia: '00005',
-//     bien_provedor: 'EQUIPOS DE LAB S.A.',
-//     bien_numero_factura: 'F-56789',
-//     bien_estado: 'Transaccion',
-//   },
-//   // 7. Pizarra Interactiva
-//   {
-//     bien_codigo: 'I060200600-21-07-00002',
-//     bien_ubicacion_actual: 'ALM',
-//     bien_marca: '"SMART"',
-//     bien_modelo: 'SMART BOARD 6052',
-//     bien_serie: 'SM-6052-88271',
-//     bien_descripcion: 'PIZARRA INTERACTIVA SMART BOARD 6052 52 PULGADAS',
-//     bien_tipo_adquisicion: '1',
-//     bien_fecha_alta: '2021-07-12T13:00:00.000000Z',
-//     bien_valor_monetario: '32000.00',
-//     bien_clave: '060200600',
-//     bien_y: '21',
-//     bien_secuencia: '00002',
-//     bien_provedor: 'SIN PROVEDOR',
-//     bien_numero_factura: '0',
-//     bien_estado: 'Inactivo',
-//   },
-//   // 8. Laptop Lenovo
-//   {
-//     bien_codigo: 'I060200100-23-03-00022',
-//     bien_ubicacion_actual: 'ALM',
-//     bien_marca: '"LENOVO"',
-//     bien_modelo: 'THINKPAD E14',
-//     bien_serie: 'LV-E14-72721',
-//     bien_descripcion: 'LAPTOP LENOVO THINKPAD E14 CORE I7 16GB RAM 1TB SSD',
-//     bien_tipo_adquisicion: '1',
-//     bien_fecha_alta: '2023-03-20T10:20:00.000000Z',
-//     bien_valor_monetario: '24500.00',
-//     bien_clave: '060200100',
-//     bien_y: '23',
-//     bien_secuencia: '00022',
-//     bien_provedor: 'LENOVO MEXICO',
-//     bien_numero_factura: 'F-78901',
-//     bien_estado: 'Activo',
-//   },
-//   // 9. Silla de Oficina
-//   {
-//     bien_codigo: 'I060200900-20-11-00104',
-//     bien_ubicacion_actual: 'ALM',
-//     bien_marca: '"HERMAN MILLER"',
-//     bien_modelo: 'AERON',
-//     bien_serie: 'HM-AERON-3031',
-//     bien_descripcion: 'SILLA DE OFICINA ERGONOMICA HERMAN MILLER AERON',
-//     bien_tipo_adquisicion: '5',
-//     bien_fecha_alta: '2020-11-05T17:00:00.000000Z',
-//     bien_valor_monetario: '21000.00',
-//     bien_clave: '060200900',
-//     bien_y: '20',
-//     bien_secuencia: '00104',
-//     bien_provedor: 'SIN PROVEDOR',
-//     bien_numero_factura: '0',
-//     bien_estado: 'Activo',
-//   },
-//   // 10. Monitor Samsung
-//   {
-//     bien_codigo: 'I060200100-22-06-00080',
-//     bien_ubicacion_actual: 'ALM',
-//     bien_marca: '"SAMSUNG"',
-//     bien_modelo: 'ODYSSEY G5 27"',
-//     bien_serie: 'SS-G5-48482',
-//     bien_descripcion: 'MONITOR GAMING CURVO SAMSUNG ODYSSEY G5 27 PULGADAS QHD',
-//     bien_tipo_adquisicion: '1',
-//     bien_fecha_alta: '2022-06-15T12:45:00.000000Z',
-//     bien_valor_monetario: '7800.00',
-//     bien_clave: '060200100',
-//     bien_y: '22',
-//     bien_secuencia: '00080',
-//     bien_provedor: 'SAMSUNG MEXICO',
-//     bien_numero_factura: 'F-90123',
-//     bien_estado: 'Mantenimiento',
-//   },
-// ];
-
-// --- MAPA DE ICONOS CHINGÓN ---
-// Mapeamos el 'bien_clave' a un icono chingón
-
-// const iconMap: { [key: string]: string } = {
-//   '060200100': 'laptop', // Computadoras, Laptops, Monitor
-//   '060200200': 'projector', // Proyector
-//   '060200300': 'air-conditioner', // Aire Acondicionado
-//   '060200400': 'printer', // Impresora
-//   '060200500': 'microscope', // Microscopio
-//   '060200600': 'presentation-play', // Pizarra
-//   '060200900': 'seat-outline', // Silla
-//   '060200310': 'sine-wave', // Generador de Frecuencia
-//   default: 'cube-outline',
-// };
-
-// const bienEstadosBg: { [key: string]: string } = {
-//   activo: 'bg-green-500/20',
-//   mantenimiento: 'bg-yellow-500/20',
-//   inactivo: 'bg-red-500/20',
-//   transaccion: 'bg-gray-500/20',
-//   default: 'bg-gray-500/20',
-// };
-
-// const bienEstadosTexto: { [key: string]: string } = {
-//   activo: 'text-green-600',
-//   mantenimiento: 'text-yellow-600',
-//   inactivo: 'text-red-600',
-//   transaccion: 'text-gray-600',
-//   default: 'text-gray-600',
-// };
-
-// --- AÑADIDO PARA ANIMACIÓN EN ANDROID ---
 if (
   Platform.OS === 'android' &&
   UIManager.setLayoutAnimationEnabledExperimental
@@ -271,14 +56,83 @@ if (
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-// type InfoScannerQRRouteProp = RouteProp<
-//   RootStackParamList,
-//   'Gest_InfoScannerQR'
-// >;
-// type InfoScannerQRNavigationProp = StackNavigationProp<
-//   RootStackParamList,
-//   'Gest_InfoScannerQR'
-// >;
+// --- CORRECCIÓN PUNTO 1: Agregar soporte para 'extravíado' con acento ---
+const localBienEstadosBg: Record<string, string> = {
+  activo: 'bg-green-100 dark:bg-green-900/30',
+  'en tránsito': 'bg-yellow-100 dark:bg-yellow-900/30',
+  extraviado: 'bg-red-100 dark:bg-red-900/30',
+  extravíado: 'bg-red-100 dark:bg-red-900/30', // Agregado con acento
+  baja: 'bg-gray-100 dark:bg-gray-900/30',
+  default: 'bg-gray-100 dark:bg-gray-800',
+};
+
+const localBienEstadosTexto: Record<string, string> = {
+  activo: 'text-green-700 dark:text-green-400',
+  'en tránsito': 'text-yellow-700 dark:text-yellow-400',
+  extraviado: 'text-red-700 dark:text-red-400',
+  extravíado: 'text-red-700 dark:text-red-400', // Agregado con acento
+  baja: 'text-gray-700 dark:text-gray-400',
+  default: 'text-gray-600 dark:text-gray-400',
+};
+// ----------------------------------------------------------------------
+
+const TabSelector = ({
+  activeTab,
+  onSelect,
+}: {
+  activeTab: string;
+  onSelect: (tab: string) => void;
+}) => {
+  const tabs = [
+    {
+      id: 'encontrados',
+      label: 'Encontrados',
+      icon: 'check-circle-outline',
+      color: '#16a34a',
+    },
+    {
+      id: 'faltantes',
+      label: 'Faltantes',
+      icon: 'alert-circle-outline',
+      color: '#dc2626',
+    },
+    {
+      id: 'sobrantes',
+      label: 'Sobrantes',
+      icon: 'help-circle-outline',
+      color: '#ea580c',
+    },
+  ];
+
+  return (
+    <View className="flex-row text-gray-400 justify-around bg-white dark:bg-[#14161A] p-2 mx-4 mb-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
+      {tabs.map((tab) => (
+        <Pressable
+          key={tab.id}
+          onPress={() => onSelect(tab.id)}
+          className={`items-center flex-1 py-2 rounded-lg ${
+            activeTab === tab.id ? 'bg-gray-100 dark:bg-gray-800' : ''
+          }`}
+        >
+          <MaterialCommunityIcons
+            name={tab.icon as any}
+            size={24}
+            color={tab.color}
+          />
+          <Text
+            className={`text-xs mt-1 font-bold ${
+              activeTab === tab.id
+                ? 'text-gray-800 dark:text-gray-200'
+                : 'text-gray-500'
+            }`}
+          >
+            {tab.label}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+};
 
 const UploadConfirmModal = ({
   visible,
@@ -355,67 +209,100 @@ const UploadConfirmModal = ({
   </Modal>
 );
 
-const ResumLevantamiento = () => {
+const ResumLevantamiento = ({
+  selectedOffice,
+  currentData,
+  apiResponse,
+  onRestart,
+  activeTab,
+  access_token,
+  setAlertInfo,
+  tempFaltantes,
+  tempSobrantes,
+  loadData,
+  tempEdits,
+  tempMoves,
+  setTempEdits,
+  setTempMoves,
+  setTempFaltantes,
+  setTempSobrantes,
+  handleRestartCapture,
+}: {
+  selectedOffice: {
+    id: number;
+    nombre: string;
+    codigo: string;
+  };
+  currentData: BienDetallado[];
+  apiResponse: CompararBienesRespuesta | null;
+  onRestart: () => void;
+  activeTab: string;
+  access_token: string;
+  setAlertInfo: (info: {
+    visible: boolean;
+    title: string;
+    message: string;
+  }) => void;
+  tempFaltantes: Record<
+    number,
+    { id: number; accion: string; id_oficina_destino?: number }
+  >;
+  tempSobrantes: Record<
+    number,
+    { id: number; accion: 'ACTUALIZAR_AQUI' | 'REGRESO_ORIGEN' }
+  >;
+  loadData: () => Promise<void>;
+  tempEdits: Record<number, Partial<BienDetallado>>;
+  tempMoves: Record<number, { id_oficina: number; nombre_oficina: string }>;
+  setTempEdits: (value: any) => void;
+  setTempMoves: (value: any) => void;
+  setTempFaltantes: (value: any) => void;
+  setTempSobrantes: (value: any) => void;
+  handleRestartCapture: () => void;
+}) => {
   const colorScheme = useColorScheme();
   const [isLoadingPdf, setIsLoadingPdf] = useState(false);
-
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadModalVisible, setUploadModalVisible] = useState(false);
 
-  // --- NOTA IMPORTANTE ---
-  // Actualmente, la lista y el PDF usan 'dataBienes' (datos de ejemplo).
-  // En el futuro, aquí deberías tomar 'scannedData',
-  // hacer un fetch a tu API para obtener los detalles de esos códigos,
-  // y guardar esa respuesta en un estado (ej. const [listaBienes, setListaBienes] = useState<DataBien[]>([]))
-  // Por ahora, seguimos con 'dataBienes' como pediste.
-  const datosParaMostrar = dataBienes; // <- Reemplazar esto con los datos de la API
-
   const statusCounts = useMemo(() => {
-    return datosParaMostrar.reduce(
+    return currentData.reduce(
       (acc, bien) => {
-        const estado = bien.bien_estado.toLowerCase();
+        const estado = (bien.bien_estado || '').toLowerCase();
         if (estado === 'activo') {
           acc.activo += 1;
-        } else if (estado === 'mantenimiento') {
-          acc.mantenimiento += 1;
-        } else if (estado === 'inactivo') {
-          acc.inactivo += 1;
-        } else if (estado === 'transaccion') {
-          acc.transaccion += 1;
+        } else if (estado === 'en tránsito') {
+          acc.enTransito += 1;
+        } else if (estado === 'extraviado' || estado === 'extravíado') {
+          acc.extraviado += 1;
+        } else if (estado === 'baja') {
+          acc.baja += 1;
         }
         return acc;
       },
-      { activo: 0, mantenimiento: 0, inactivo: 0, transaccion: 0 },
+      { activo: 0, enTransito: 0, extraviado: 0, baja: 0 },
     );
-  }, [datosParaMostrar]); // Se recalcula solo si 'datosParaMostrar' cambia
+  }, [currentData]);
 
   const handleGeneratePdf = async () => {
-    if (isLoadingPdf) return; // Evitar doble click
+    if (isLoadingPdf) return;
 
     setIsLoadingPdf(true);
     try {
-      // 1. Generar HTML
-      const htmlContent = generatePdfHtml(datosParaMostrar);
-
-      // 2. Definir ruta del archivo
-      // Usamos FileSystem.cacheDirectory para guardar el archivo temporalmente
+      const htmlContent = generatePdfHtml(currentData);
       const fileUri = `${FileSystem.cacheDirectory}reporte_bienes_${Date.now()}.pdf`;
 
-      // 3. Crear el PDF
       const { uri } = await Print.printToFileAsync({
         html: htmlContent,
-        width: 612, // Ancho de página estándar (Letter)
-        height: 792, // Alto de página estándar (Letter)
+        width: 612,
+        height: 792,
       });
-      console.log('PDF generado en:', uri);
 
-      // 4. Mover el archivo a nuestra ruta (esto es más robusto en Android)
       await FileSystem.moveAsync({
         from: uri,
         to: fileUri,
       });
 
-      // 5. Comprobar si se puede compartir
       if (!(await Sharing.isAvailableAsync())) {
         alert(
           'La función de compartir no está disponible en este dispositivo.',
@@ -424,7 +311,6 @@ const ResumLevantamiento = () => {
         return;
       }
 
-      // 6. Compartir el archivo
       await Sharing.shareAsync(fileUri, {
         dialogTitle: 'Descargar Reporte de Bienes',
         mimeType: 'application/pdf',
@@ -446,30 +332,110 @@ const ResumLevantamiento = () => {
   };
 
   const handleConfirmUpload = async () => {
+    if (!apiResponse) return;
     setIsUploading(true);
-    console.log('Subiendo levantamiento al controlador...', datosParaMostrar);
 
-    // --- Aquí llamas a tu controlador ---
-    // try {
-    //   const respuesta = await tuControlador.subirLevantamiento(datosParaMostrar);
-    //   console.log('Respuesta del servidor:', respuesta);
-    //   // Aquí podrías mostrar un modal de ÉXITO
-    // } catch (error) {
-    //   console.error('Error al subir:', error);
-    //   // Aquí podrías mostrar un modal de ERROR
-    // } finally {
-    //   setIsUploading(false);
-    //   handleCloseUploadModal();
-    // }
+    try {
+      // 1. ENCONTRADOS
+      const listaEncontrados = apiResponse.encontrados.map((item) => {
+        const id = item.id;
+        const moveData = tempMoves[id];
+        const editData = tempEdits[id];
 
-    // --- Simulación de API (borra esto cuando conectes tu controller) ---
-    setTimeout(() => {
-      console.log('Levantamiento subido (simulado).');
-      setIsUploading(false);
+        if (moveData) {
+          return {
+            id: id,
+            accion: 'EN_TRANSITO',
+            id_oficina_destino: moveData.id_oficina,
+          };
+        }
+
+        if (editData) {
+          return {
+            id: id,
+            bien_marca: editData.bien_marca || item.bien_marca,
+            bien_modelo: editData.bien_modelo || item.bien_modelo,
+            bien_serie: editData.bien_serie || item.bien_serie,
+            bien_descripcion:
+              editData.bien_descripcion || item.bien_descripcion,
+            bien_caracteristicas:
+              editData.bien_caracteristicas || item.bien_caracteristicas,
+          };
+        }
+        return { id: id };
+      });
+
+      // 2. FALTANTES
+      const listaFaltantes = apiResponse.faltantes
+        .map((item) => {
+          const temp = tempFaltantes[item.id];
+          if (temp) {
+            return {
+              id: item.id,
+              accion: temp.accion,
+              ...(temp.id_oficina_destino && {
+                id_oficina_destino: temp.id_oficina_destino,
+              }),
+            };
+          }
+          // --- CORRECCIÓN: Comentamos el default y retornamos null ---
+          /* return {
+            id: item.id,
+            accion: 'EXTRAVIADO',
+          }; 
+          */
+          return null; // No hacemos nada con los que no se tocaron
+        })
+        .filter((item) => item !== null); // Filtramos los nulos para que no vayan en el JSON
+
+      // 3. SOBRANTES
+      const listaSobrantes = apiResponse.sobrantes.map((item) => {
+        const temp = tempSobrantes[item.id];
+        if (temp) {
+          return { id: item.id, accion: temp.accion };
+        }
+        return { id: item.id, accion: 'ACTUALIZAR_AQUI' };
+      });
+
+      // Payload Final
+      const payloadUpload: LevantamientoRequest = {
+        id_oficina_levantamiento: selectedOffice.id,
+        encontrados: listaEncontrados as any,
+        faltantes: listaFaltantes as any,
+        sobrantes: listaSobrantes as any,
+      };
+
+      console.log('🚀 Payload Final:', JSON.stringify(payloadUpload, null, 2));
+
+      const credenciales: Access_token = { access_token };
+      await subirLevantamiento(credenciales, payloadUpload);
+
       handleCloseUploadModal();
-      // Aquí podrías mostrar un modal de éxito si quisieras
-    }, 2000);
-    // --- Fin de la simulación ---
+      setAlertInfo({
+        visible: true,
+        title: 'Éxito',
+        message: 'Levantamiento actualizado correctamente.',
+      });
+
+      setTempEdits({});
+      setTempMoves({});
+      setTempFaltantes({});
+      setTempSobrantes({});
+
+      await loadData();
+
+      handleRestartCapture();
+    } catch (error: any) {
+      console.error(error);
+      handleCloseUploadModal();
+      setAlertInfo({
+        visible: true,
+        title: 'Error',
+        message: 'No se pudo subir el levantamiento.',
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -483,24 +449,49 @@ const ResumLevantamiento = () => {
           />
           <View className="flex-1 ml-2">
             <Text className="text-2xl md:text-3xl lg:text-3xl font-bold text-gray-800 dark:text-slate-200">
-              Resumen del Levantamiento
+              Resumen del Listado
             </Text>
             <Text className="text-base md:text-lg text-gray-500 dark:text-slate-400">
-              Se encontraron {datosParaMostrar.length} bienes.
+              {currentData.length} bienes listados.
             </Text>
           </View>
         </View>
 
-        <StatusSummaryCard
-          counts={statusCounts}
-          total={datosParaMostrar.length}
-        />
+        <StatusSummaryCard counts={statusCounts} total={currentData.length} />
 
-        <Pressable
+        {/* {activeTab === 'found' && (
+          <>
+            <Pressable
+              onPress={handleGeneratePdf}
+              disabled={isLoadingPdf || isUploading || currentData.length === 0}
+              className={`flex-row items-center justify-center rounded-lg p-3.5 my-2 ${
+                isLoadingPdf || isUploading || currentData.length === 0
+                  ? 'bg-gray-400 dark:bg-gray-600'
+                  : 'bg-green-600 dark:bg-green-700 active:bg-green-800'
+              } shadow-md`}
+            >
+              {isLoadingPdf ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <MaterialCommunityIcons
+                  name="printer"
+                  size={24}
+                  color="white"
+                  className="mr-2"
+                />
+              )}
+              <Text className="text-white text-center font-bold text-base md:text-lg">
+                {isLoadingPdf ? 'Generando PDF...' : 'Descargar Reporte en PDF'}
+              </Text>
+            </Pressable>
+          </>
+        )} */}
+
+        {/* <Pressable
           onPress={handleGeneratePdf}
-          disabled={isLoadingPdf || isUploading}
+          disabled={isLoadingPdf || isUploading || currentData.length === 0}
           className={`flex-row items-center justify-center rounded-lg p-3.5 my-2 ${
-            isLoadingPdf || isUploading
+            isLoadingPdf || isUploading || currentData.length === 0
               ? 'bg-gray-400 dark:bg-gray-600'
               : 'bg-green-600 dark:bg-green-700 active:bg-green-800'
           } shadow-md`}
@@ -509,7 +500,7 @@ const ResumLevantamiento = () => {
             <ActivityIndicator size="small" color="white" />
           ) : (
             <MaterialCommunityIcons
-              name="file-pdf-box"
+              name="printer"
               size={24}
               color="white"
               className="mr-2"
@@ -518,13 +509,12 @@ const ResumLevantamiento = () => {
           <Text className="text-white text-center font-bold text-base md:text-lg">
             {isLoadingPdf ? 'Generando PDF...' : 'Descargar Reporte en PDF'}
           </Text>
-        </Pressable>
-
+        </Pressable> */}
         <Pressable
           onPress={handleOpenUploadModal}
-          disabled={isLoadingPdf || isUploading}
+          disabled={isLoadingPdf || isUploading || currentData.length === 0}
           className={`flex-row items-center justify-center rounded-lg p-3.5 my-2 ${
-            isLoadingPdf || isUploading
+            isLoadingPdf || isUploading || currentData.length === 0
               ? 'bg-gray-400 dark:bg-gray-600'
               : 'bg-blue-600 dark:bg-blue-700 active:bg-blue-800'
           } shadow-md`}
@@ -544,9 +534,39 @@ const ResumLevantamiento = () => {
           </Text>
         </Pressable>
 
-        <Text className="text-2xl md:text-2xl lg:text-2xl px-1 pt-4 pb-2 font-bold text-gray-700 dark:text-slate-300">
-          Bienes Encontrados:
-        </Text>
+        <View className="mt-1 mb-1">
+          <View className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-xl shadow-sm flex-row justify-between items-center">
+            <View className="flex-1">
+              <Text className="text-blue-600 dark:text-blue-400 text-xs font-bold uppercase">
+                Oficina Selecciona
+              </Text>
+              <Text
+                className="text-sm font-bold text-gray-800 dark:text-white"
+                numberOfLines={4}
+              >
+                {selectedOffice?.nombre || 'Oficina Desconocida'}
+              </Text>
+            </View>
+            <Pressable
+              onPress={onRestart}
+              className="bg-blue-100 dark:bg-blue-900/30 active:bg-blue-200 active:dark:bg-blue-900/50 p-4 py-2 px-2 rounded-lg"
+            >
+              <View className="items-center">
+                <MaterialCommunityIcons
+                  name="refresh"
+                  size={22}
+                  color="#2563eb"
+                />
+                <Text
+                  className="text-blue-600 dark:text-blue-400 text-xs font-bold uppercase"
+                  numberOfLines={1}
+                >
+                  Nueva Captura
+                </Text>
+              </View>
+            </Pressable>
+          </View>
+        </View>
       </View>
 
       <UploadConfirmModal
@@ -554,7 +574,7 @@ const ResumLevantamiento = () => {
         onClose={handleCloseUploadModal}
         onConfirm={handleConfirmUpload}
         isUploading={isUploading}
-        itemCount={datosParaMostrar.length}
+        itemCount={currentData.length}
       />
     </>
   );
@@ -641,7 +661,7 @@ const Filtros = ({
                       justifyContent: 'flex-end',
                     }}
                     textStyle={{
-                      color: 'gray',
+                      color: colorScheme === 'light' ? 'gray' : '#94a3b8',
                     }}
                     dropDownContainerStyle={{
                       marginTop: '-400%',
@@ -714,35 +734,31 @@ const EditModal = ({
 }: {
   visible: boolean;
   onClose: () => void;
-  onConfirmEdit: (updatedBien: DataBien) => void;
-  bien: DataBien | null;
+  onConfirmEdit: (updatedBien: BienDetallado) => void;
+  bien: BienDetallado | null;
 }) => {
   const colorScheme = useColorScheme();
   const isDarkMode = colorScheme === 'dark';
 
-  // --- Estado interno para el formulario ---
-  const [formData, setFormData] = useState<Partial<DataBien>>({});
+  const [formData, setFormData] = useState<Partial<BienDetallado>>({});
 
-  // --- Cargar datos en el formulario cuando el modal se abre ---
   useEffect(() => {
     if (bien) {
-      setFormData(bien); // Copia los datos del bien al estado del formulario
+      setFormData(bien);
     } else {
-      setFormData({}); // Limpia el formulario si no hay bien
+      setFormData({});
     }
-  }, [bien]); // Este efecto se ejecuta cada vez que 'bien' cambia
+  }, [bien]);
 
-  // --- Handler para actualizar el estado del formulario ---
-  const handleInputChange = (field: keyof DataBien, value: string) => {
+  const handleInputChange = (field: keyof BienDetallado, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Tema para los TextInputs
   const customTheme = {
     ...DefaultTheme,
     colors: {
       ...DefaultTheme.colors,
-      primary: '#10b981', // Verde Esmeralda
+      primary: '#10b981',
       background: isDarkMode ? '#2d2d2d' : '#f0f0f0',
       onSurface: 'gray',
       onSurfaceVariant: 'gray',
@@ -775,44 +791,26 @@ const EditModal = ({
               />
             </View>
 
-            <Text className="text-gray-700 dark:text-slate-300 text-xl md:text-2xl font-bold text-center mb-4">
-              Editar Información del Bien
+            <Text className="text-gray-700 dark:text-slate-300 text-xl md:text-2xl font-bold text-center">
+              Editar Información
+            </Text>
+
+            <Text
+              className="text-gray-700 dark:text-slate-300 text-md md:text-xl text-center mb-3"
+              numberOfLines={2}
+            >
+              {bien.bien_descripcion ? (
+                <Text className="font-semibold"> Descripción: </Text>
+              ) : (
+                <Text className="font-semibold"> Código: </Text>
+              )}
+              <Text className="font-thin">
+                {bien.bien_descripcion || bien.bien_codigo}
+              </Text>
             </Text>
 
             {/* --- Formulario de Edición --- */}
             <View>
-              {/* Código (Deshabilitado) */}
-              <FormInput
-                label="Código del Bien"
-                icon="barcode-scan"
-                value={formData.bien_codigo || ''}
-                onChangeText={() => {}} // No hace nada
-                disabled={true}
-                theme={customTheme}
-              />
-
-              {/* Secuencia (Deshabilitado) */}
-              <FormInput
-                label="Secuencia"
-                icon="pencil-outline"
-                value={formData.bien_secuencia || ''}
-                onChangeText={(val) => handleInputChange('bien_secuencia', val)}
-                disabled={true}
-                theme={customTheme}
-              />
-
-              {/* Ubicación (Deshabilitado) */}
-              <FormInput
-                label="Ubicación Actual"
-                icon="map-marker-outline"
-                value={formData.bien_ubicacion_actual || ''}
-                onChangeText={(val) =>
-                  handleInputChange('bien_ubicacion_actual', val)
-                }
-                disabled={true}
-                theme={customTheme}
-              />
-
               {/* Marca */}
               <FormInput
                 label="Marca"
@@ -842,7 +840,7 @@ const EditModal = ({
 
               {/* Descripción */}
               <FormInput
-                label="Descripción"
+                label="Descripción (Nombre)"
                 icon="text-box-outline"
                 value={formData.bien_descripcion || ''}
                 onChangeText={(val) =>
@@ -851,26 +849,14 @@ const EditModal = ({
                 theme={customTheme}
               />
 
-              {/* Tipo de Adqusición */}
+              {/* Caracteristicas */}
               <FormInput
-                label="Tipo de Adquisición"
-                icon="file-document-outline"
-                value={formData.bien_tipo_adquisicion || ''}
+                label="Características"
+                icon="information-outline"
+                value={formData.bien_caracteristicas || ''}
                 onChangeText={(val) =>
-                  handleInputChange('bien_tipo_adquisicion', val)
+                  handleInputChange('bien_caracteristicas', val)
                 }
-                theme={customTheme}
-              />
-
-              {/* Valor Monetario */}
-              <FormInput
-                label="Valor Monetario"
-                icon="cash"
-                value={String(formData.bien_valor_monetario || '')}
-                onChangeText={(val) =>
-                  handleInputChange('bien_valor_monetario', val)
-                }
-                keyboardType="numeric"
                 theme={customTheme}
               />
             </View>
@@ -885,7 +871,7 @@ const EditModal = ({
                 </Text>
               </Pressable>
               <Pressable
-                onPress={() => onConfirmEdit(formData as DataBien)}
+                onPress={() => onConfirmEdit(formData as BienDetallado)}
                 className="flex-1 bg-emerald-600 rounded-lg p-4 ml-2 active:bg-emerald-700"
               >
                 <Text
@@ -903,88 +889,25 @@ const EditModal = ({
   );
 };
 
-const TransferModal = ({
+const RequestModal = ({
   visible,
   onClose,
   onConfirm,
   bien,
+  targetOffice, // Prop nueva para recibir la oficina seleccionada
+  onPressSelectOffice, // Prop nueva para abrir el selector
 }: {
   visible: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  bien: DataBien | null;
+  bien: BienDetallado | null;
+  targetOffice: { nombre: string } | null;
+  onPressSelectOffice: () => void;
 }) => {
-  const colorScheme = useColorScheme();
-  const isDarkMode = colorScheme === 'dark';
+  if (!bien) return null;
 
-  const modalBackgroundColor = isDarkMode ? '#14161A' : '#f1f5f9';
-  const modalBorderColor = isDarkMode ? 'e5e7eb' : '#e5e7eb';
-  const modalTextColor = 'gray';
-  const modalSearchBgColor = isDarkMode ? '#14161A' : '#ffffff';
-  const modalSearchBorderColor = isDarkMode ? '#334155' : '#e2e8f0';
-
-  const [searchUser, setSearchUser] = useState('');
-  const [officeOpen, setOfficeOpen] = useState(false);
-  const [officeValue, setOfficeValue] = useState(null);
-  const [officeItems, setOfficeItems] = useState([
-    {
-      label: 'Sistemas y Computación',
-      value: 'sistemas',
-      icon: () => (
-        <MaterialCommunityIcons
-          name="office-building-outline"
-          size={18}
-          color="gray"
-        />
-      ),
-    },
-    {
-      label: 'Mantenimiento de Equipo',
-      value: 'manto',
-      icon: () => (
-        <MaterialCommunityIcons
-          name="office-building-outline"
-          size={18}
-          color="gray"
-        />
-      ),
-    },
-    {
-      label: 'Dirección General',
-      value: 'dir',
-      icon: () => (
-        <MaterialCommunityIcons
-          name="office-building-outline"
-          size={18}
-          color="gray"
-        />
-      ),
-    },
-    {
-      label: 'Recursos Financieros',
-      value: 'fin',
-      icon: () => (
-        <MaterialCommunityIcons
-          name="office-building-outline"
-          size={18}
-          color="gray"
-        />
-      ),
-    },
-  ]);
-
-  const customTheme = {
-    ...DefaultTheme,
-    colors: {
-      ...DefaultTheme.colors,
-      primary: '#25A4D6',
-      background: colorScheme === 'light' ? '#f0f0f0' : '#2d2d2d',
-      onSurface: 'gray',
-      onSurfaceVariant: 'gray',
-    },
-  };
-
-  if (!bien) return null; // No renderizar nada si no hay un bien seleccionado
+  // Validación del botón Mover
+  const isButtonDisabled = !targetOffice;
 
   return (
     <Modal visible={visible} transparent={true} animationType="fade">
@@ -1004,298 +927,83 @@ const TransferModal = ({
           <View className="w-full max-w-2xl bg-white dark:bg-[#14161A] border-2 border-gray-200 dark:border-1 dark:border-gray-700 rounded-xl shadow-xl p-6">
             <View className="items-center mb-4">
               <MaterialCommunityIcons
-                name="account-switch-outline"
-                size={50}
-                color="#25A4D6"
-              />
-            </View>
-
-            <Text className="text-gray-700 dark:text-slate-300 text-xl md:text-2xl font-bold text-center mb-2">
-              Traspasar Bien
-            </Text>
-            <Text
-              className="text-gray-600 dark:text-slate-400 text-base text-center mb-4"
-              numberOfLines={4}
-            >
-              Vas a traspasar el bien:{' '}
-              <Text className="font-bold">{bien.bien_descripcion}</Text>.
-            </Text>
-
-            {/* --- Controles de Búsqueda --- */}
-            <View style={{ zIndex: 1000 }}>
-              {/* TextInput de Búsqueda */}
-              <View className="bg-gray-100 dark:bg-[#2d2d2d] rounded-lg mb-3">
-                <TextInput
-                  mode="flat"
-                  theme={customTheme}
-                  value={searchUser}
-                  onChangeText={setSearchUser}
-                  label="Buscar resguardante..."
-                  left={
-                    <TextInput.Icon
-                      icon={() => (
-                        <MaterialCommunityIcons
-                          name="account-search"
-                          size={24}
-                          color={'#25A4D6'}
-                        />
-                      )}
-                    />
-                  }
-                  style={{ backgroundColor: 'transparent' }}
-                />
-              </View>
-
-              {/* Dropdown de Oficinas */}
-              <View className="bg-gray-100 dark:bg-[#2d2d2d] rounded-lg mb-6">
-                <DropDownPicker
-                  theme={colorScheme === 'light' ? 'LIGHT' : 'DARK'}
-                  open={officeOpen}
-                  value={officeValue}
-                  items={officeItems}
-                  setOpen={setOfficeOpen}
-                  setValue={setOfficeValue}
-                  setItems={setOfficeItems}
-                  placeholder="Filtrar por oficina..."
-                  listMode="MODAL"
-                  modalAnimationType="slide"
-                  modalTitle="Selecciona una Oficina"
-                  searchable={true}
-                  searchPlaceholder="Buscar oficina..."
-                  translation={{
-                    NOTHING_TO_SHOW: 'No se encontraron oficinas.',
-                  }}
-                  modalContentContainerStyle={{
-                    backgroundColor: modalBackgroundColor,
-                  }}
-                  modalTitleStyle={{
-                    color: modalTextColor,
-                    fontWeight: 'bold',
-                  }}
-                  searchContainerStyle={{
-                    borderBottomColor: modalBorderColor,
-                  }}
-                  searchTextInputStyle={{
-                    color: modalTextColor,
-                    backgroundColor: modalSearchBgColor,
-                    borderColor: modalSearchBorderColor,
-                    borderRadius: 8,
-                    borderWidth: 1,
-                  }}
-                  style={{
-                    backgroundColor: 'transparent',
-                    borderColor: 'transparent',
-                  }}
-                  textStyle={{ color: 'gray' }}
-                />
-              </View>
-            </View>
-
-            {/* --- Lista de Resguardantes (Simulada) --- */}
-            <View className="h-24 mb-6 items-center justify-center border border-dashed border-gray-400 dark:border-gray-600 rounded-lg">
-              <Text className="text-gray-500 dark:text-gray-400">
-                (Aquí aparecerá la lista de resguardantes)
-              </Text>
-            </View>
-
-            {/* --- Fila de Botones --- */}
-            <View className="flex-row justify-between">
-              <Pressable
-                onPress={onClose}
-                className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-lg p-4 mr-2 active:bg-gray-300 dark:active:bg-gray-500"
-              >
-                <Text className="text-gray-800 dark:text-white text-center font-bold text-lg">
-                  Cancelar
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={onConfirm}
-                className="flex-1 bg-green-600 rounded-lg p-4 ml-2 active:bg-green-700"
-              >
-                <Text className="text-white text-center font-bold text-lg">
-                  Confirmar
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </Modal>
-  );
-};
-
-const RequestModal = ({
-  visible,
-  onClose,
-  onConfirm,
-  bien,
-}: {
-  visible: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  bien: DataBien | null;
-}) => {
-  const colorScheme = useColorScheme();
-  const isDarkMode = colorScheme === 'dark';
-
-  const modalBackgroundColor = isDarkMode ? '#14161A' : '#f1f5f9';
-  // const modalBorderColor = isDarkMode ? 'e5e7eb' : '#e5e7eb';
-  const modalTextColor = 'gray';
-
-  // --- Estados internos para el formulario ---
-  const [requestTypeOpen, setRequestTypeOpen] = useState(false);
-  const [requestTypeValue, setRequestTypeValue] = useState(null);
-  const [justification, setJustification] = useState('');
-
-  const [requestTypeItems, setRequestTypeItems] = useState([
-    {
-      label: 'Solicitar Mantenimiento',
-      value: 'mantenimiento',
-      icon: () => (
-        <MaterialCommunityIcons name="cogs" size={18} color="#f59e0b" />
-      ), // color-yellow-500
-    },
-    {
-      label: 'Solicitar Baja de Bien',
-      value: 'baja',
-      icon: () => (
-        <MaterialCommunityIcons
-          name="archive-arrow-down-outline"
-          size={18}
-          color="#ef4444" // color-red-500
-        />
-      ),
-    },
-    {
-      label: 'Otra Solicitud',
-      value: 'otra',
-      icon: () => (
-        <MaterialCommunityIcons
-          name="comment-question-outline"
-          size={18}
-          color="gray"
-        />
-      ),
-    },
-  ]);
-
-  // Tema para el TextInput de justificación
-  const customTheme = {
-    ...DefaultTheme,
-    colors: {
-      ...DefaultTheme.colors,
-      primary: '#a855f7', // Púrpura, a juego con el botón
-      background: isDarkMode ? '#2d2d2d' : '#f0f0f0',
-      onSurface: 'gray',
-      onSurfaceVariant: 'gray',
-    },
-  };
-
-  if (!bien) return null;
-
-  return (
-    <Modal visible={visible} transparent={true} animationType="fade">
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
-        <ScrollView
-          contentContainerStyle={{
-            flexGrow: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-          className="bg-black/60 px-5" // <--- Clases movidas aquí
-          keyboardShouldPersistTaps="handled" // <--- Buena práctica
-        >
-          {/* <View className="flex-1 justify-center items-center bg-black/60 px-5"> */}
-          <View className="w-full max-w-2xl bg-white dark:bg-[#14161A] border-2 border-gray-200 dark:border-1 dark:border-gray-700 rounded-xl shadow-xl p-6">
-            <View className="items-center mb-4">
-              <MaterialCommunityIcons
                 name="file-document-edit-outline"
                 size={50}
-                color="#a855f7" // Púrpura
+                color="#a855f7"
               />
             </View>
 
             <Text className="text-gray-700 dark:text-slate-300 text-xl md:text-2xl font-bold text-center mb-2">
-              Generar Solicitud
+              Selecciona la nueva oficina
             </Text>
             <Text
               className="text-gray-600 dark:text-slate-400 text-base text-center mb-4"
               numberOfLines={2}
             >
-              Estás generando una solicitud para el bien:{' '}
+              Vas a mover el bien:{' '}
               <Text className="font-bold">{bien.bien_descripcion}</Text>.
             </Text>
 
-            {/* --- Controles del Formulario --- */}
-            <View style={{ zIndex: 1000 }}>
-              {/* Dropdown de Tipo de Solicitud */}
-              <View className="bg-gray-100 dark:bg-[#2d2d2d] rounded-lg mb-3">
-                <DropDownPicker
-                  theme={colorScheme === 'light' ? 'LIGHT' : 'DARK'}
-                  open={requestTypeOpen}
-                  value={requestTypeValue}
-                  items={requestTypeItems}
-                  setOpen={setRequestTypeOpen}
-                  setValue={setRequestTypeValue}
-                  setItems={setRequestTypeItems}
-                  placeholder="Selecciona un tipo de solicitud"
-                  listMode="MODAL"
-                  modalTitle="Tipo de Solicitud"
-                  modalContentContainerStyle={{
-                    backgroundColor: modalBackgroundColor,
-                  }}
-                  modalTitleStyle={{
-                    color: modalTextColor,
-                    fontWeight: 'bold',
-                  }}
-                  style={{
-                    backgroundColor: 'transparent',
-                    borderColor: 'transparent',
-                  }}
-                  textStyle={{ color: 'gray' }}
-                  dropDownContainerStyle={{
-                    backgroundColor:
-                      colorScheme === 'light' ? '#f3f4f6' : '#2d2d2d',
-                    borderColor:
-                      colorScheme === 'light' ? '#f3f4f6' : '#2d2d2d',
-                    borderWidth: 0.2,
-                  }}
-                />
-              </View>
-
-              {/* TextInput de Justificación */}
-              <View className="bg-gray-100 dark:bg-[#2d2d2d] rounded-lg mb-6">
-                <TextInput
-                  mode="flat"
-                  returnKeyType="send"
-                  theme={customTheme}
-                  value={justification}
-                  onChangeText={setJustification}
-                  label="Motivo o Justificación"
-                  // multiline
-                  numberOfLines={4}
-                  left={
-                    <TextInput.Icon
-                      icon={() => (
-                        <MaterialCommunityIcons
-                          name="comment-text-outline"
-                          size={24}
-                          color={'#a855f7'}
-                        />
-                      )}
+            {/* -- SECCION DE OFICINA (Funcional) -- */}
+            <View className="w-full mb-4">
+              {targetOffice ? (
+                <Pressable
+                  onPress={onPressSelectOffice}
+                  className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-3 flex-row items-center"
+                >
+                  <View className="bg-blue-500 rounded-full p-2 mr-3">
+                    <MaterialCommunityIcons
+                      name="office-building"
+                      size={20}
+                      color="white"
                     />
-                  }
-                  style={{
-                    backgroundColor: 'transparent',
-                  }}
-                />
-              </View>
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-xs text-blue-600 dark:text-blue-400 font-bold uppercase">
+                      Oficina Seleccionada
+                    </Text>
+                    <Text
+                      className="text-gray-800 dark:text-white font-bold text-base"
+                      numberOfLines={1}
+                    >
+                      {targetOffice.nombre}
+                    </Text>
+                  </View>
+                  <MaterialCommunityIcons
+                    name="pencil"
+                    size={18}
+                    color="#2563eb"
+                  />
+                </Pressable>
+              ) : (
+                <Pressable
+                  onPress={onPressSelectOffice}
+                  className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl p-3 flex-row items-center"
+                >
+                  <View className="bg-orange-500 rounded-full p-2 mr-3">
+                    <MaterialCommunityIcons
+                      name="alert"
+                      size={20}
+                      color="white"
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-gray-800 dark:text-white font-bold text-base">
+                      Seleccionar Oficina
+                    </Text>
+                    <Text className="text-xs text-orange-600 dark:text-orange-400">
+                      Requerido para comenzar
+                    </Text>
+                  </View>
+                  <MaterialCommunityIcons
+                    name="chevron-right"
+                    size={24}
+                    color="#ea580c"
+                  />
+                </Pressable>
+              )}
             </View>
 
-            {/* --- Fila de Botones --- */}
             <View className="flex-row justify-between">
               <Pressable
                 onPress={onClose}
@@ -1306,11 +1014,16 @@ const RequestModal = ({
                 </Text>
               </Pressable>
               <Pressable
-                onPress={onConfirm}
-                className="flex-1 bg-purple-600 rounded-lg p-4 ml-2 active:bg-purple-700"
+                onPress={isButtonDisabled ? null : onConfirm}
+                // className="flex-1 bg-purple-600 rounded-lg p-4 ml-2 active:bg-purple-700"
+                className={`flex-1 rounded-lg p-4 ml-2 ${
+                  isButtonDisabled
+                    ? 'bg-gray-400 dark:bg-gray-600' // Estilo deshabilitado (Gris)
+                    : 'bg-purple-600 active:bg-purple-700' // Estilo activo (Morado)
+                }`}
               >
                 <Text className="text-white text-center font-bold text-lg">
-                  Enviar Solicitud
+                  Mover
                 </Text>
               </Pressable>
             </View>
@@ -1321,10 +1034,284 @@ const RequestModal = ({
   );
 };
 
-// ========================================================================
-// ==================         NUEVO BIENITEM         ==================
-// ========================================================================
-// --- Helper para las filas de detalles ---
+// --- MODAL ACTUALIZADO CON BOTÓN ACTIVO ---
+const ChangeStatusModal = ({
+  visible,
+  onClose,
+  onConfirm,
+  bien,
+  selectedOfficeForTransit,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onConfirm: (nuevoEstado: string) => void;
+  bien: BienDetallado | null;
+  selectedOfficeForTransit?: { nombre: string } | null;
+}) => {
+  const [selectedStatus, setSelectedStatus] = useState<string>('');
+
+  useEffect(() => {
+    if (selectedOfficeForTransit) setSelectedStatus('en tránsito');
+    else if (bien) setSelectedStatus(bien.bien_estado?.toLowerCase() || '');
+  }, [bien, selectedOfficeForTransit]);
+
+  if (!bien) return null;
+
+  return (
+    <Modal visible={visible} transparent={true} animationType="fade">
+      <View className="flex-1 justify-center items-center bg-black/60 px-5">
+        <View className="w-full max-w-lg bg-white dark:bg-[#14161A] border-2 border-gray-200 dark:border-1 dark:border-gray-700 rounded-xl shadow-xl p-6">
+          <View className="items-center mb-4">
+            <MaterialCommunityIcons
+              name="list-status"
+              size={50}
+              color="#ef4444"
+            />
+          </View>
+
+          <Text className="text-gray-700 dark:text-slate-300 text-xl font-bold text-center mb-2">
+            Cambiar Estado del Bien
+          </Text>
+          <Text className="text-gray-500 dark:text-slate-400 text-sm text-center mb-6">
+            Selecciona el nuevo estado para:{' '}
+            <Text className="font-bold">
+              {bien.bien_descripcion || bien.bien_codigo}
+            </Text>
+          </Text>
+
+          {/* Lista de Opciones */}
+          <View className="mb-6">
+            {/* OPCION 1: ACTIVO (NUEVO) */}
+            <Pressable
+              onPress={() => setSelectedStatus('activo')}
+              className={`flex-row items-center p-3 mb-2 rounded-lg border ${
+                selectedStatus === 'activo'
+                  ? 'bg-green-50 dark:bg-green-900/20 border-green-500'
+                  : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+              }`}
+            >
+              <MaterialCommunityIcons
+                name="check-circle-outline"
+                size={24}
+                color={selectedStatus === 'activo' ? '#10b981' : 'gray'}
+              />
+              <Text
+                className={`ml-3 font-bold text-base ${
+                  selectedStatus === 'activo'
+                    ? 'text-green-600 dark:text-green-400'
+                    : 'text-gray-600 dark:text-gray-300'
+                }`}
+              >
+                Activo
+              </Text>
+              {selectedStatus === 'activo' && (
+                <View className="flex-1 items-end">
+                  <MaterialCommunityIcons
+                    name="check"
+                    size={20}
+                    color="#10b981"
+                  />
+                </View>
+              )}
+            </Pressable>
+
+            {/* OPCION 2: EN TRANSITO */}
+            <Pressable
+              onPress={() => {
+                setSelectedStatus('en tránsito');
+                onConfirm('en tránsito');
+              }}
+              className={`flex-row items-center p-3 mb-2 rounded-lg border ${
+                selectedStatus === 'en tránsito'
+                  ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500'
+                  : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+              }`}
+            >
+              <MaterialCommunityIcons
+                name="map-search-outline"
+                size={24}
+                color={selectedStatus === 'en tránsito' ? '#eab308' : 'gray'}
+              />
+              <View className="ml-3 flex-1">
+                <Text
+                  className={`font-bold text-base ${
+                    selectedStatus === 'en tránsito'
+                      ? 'text-yellow-600 dark:text-yellow-400'
+                      : 'text-gray-600 dark:text-gray-300'
+                  }`}
+                >
+                  En Tránsito
+                </Text>
+                {selectedOfficeForTransit && (
+                  <Text className="text-xs text-gray-500 italic mt-1">
+                    Destino: {selectedOfficeForTransit.nombre}
+                  </Text>
+                )}
+              </View>
+              {selectedStatus === 'en tránsito' && (
+                <View className="items-end">
+                  {selectedOfficeForTransit ? (
+                    <MaterialCommunityIcons
+                      name="check"
+                      size={20}
+                      color="#eab308"
+                    />
+                  ) : (
+                    <MaterialCommunityIcons
+                      name="chevron-right"
+                      size={20}
+                      color="#eab308"
+                    />
+                  )}
+                </View>
+              )}
+            </Pressable>
+
+            {/* OPCION 3: EXTRAVIADO */}
+            <Pressable
+              onPress={() => setSelectedStatus('extraviado')}
+              className={`flex-row items-center p-3 mb-2 rounded-lg border ${
+                selectedStatus === 'extraviado'
+                  ? 'bg-red-50 dark:bg-red-900/20 border-red-500'
+                  : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+              }`}
+            >
+              <MaterialCommunityIcons
+                name="alert-circle-outline"
+                size={24}
+                color={selectedStatus === 'extraviado' ? '#ef4444' : 'gray'}
+              />
+              <Text
+                className={`ml-3 font-bold text-base ${
+                  selectedStatus === 'extraviado'
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-gray-600 dark:text-gray-300'
+                }`}
+              >
+                Extraviado
+              </Text>
+              {selectedStatus === 'extraviado' && (
+                <View className="flex-1 items-end">
+                  <MaterialCommunityIcons
+                    name="check"
+                    size={20}
+                    color="#ef4444"
+                  />
+                </View>
+              )}
+            </Pressable>
+          </View>
+
+          {/* BOTONES */}
+          <View className="flex-row justify-between">
+            <Pressable
+              onPress={onClose}
+              className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-lg p-4 mr-2"
+            >
+              <Text className="text-gray-800 dark:text-white text-center font-bold text-lg">
+                Cancelar
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => {
+                if (
+                  selectedStatus === 'en tránsito' &&
+                  !selectedOfficeForTransit
+                )
+                  return;
+                onConfirm(selectedStatus);
+              }}
+              disabled={
+                !(
+                  selectedStatus === 'extraviado' ||
+                  selectedStatus === 'activo' ||
+                  (selectedStatus === 'en tránsito' && selectedOfficeForTransit)
+                )
+              }
+              className={`flex-1 rounded-lg p-4 ml-2 ${
+                selectedStatus === 'extraviado' ||
+                selectedStatus === 'activo' ||
+                (selectedStatus === 'en tránsito' && selectedOfficeForTransit)
+                  ? 'bg-blue-600 active:bg-blue-700'
+                  : 'bg-gray-400'
+              }`}
+            >
+              <Text className="text-white text-center font-bold text-lg">
+                Guardar
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+const InfoAlertModal = ({
+  visible,
+  title,
+  message,
+  onClose,
+}: {
+  visible: boolean;
+  title: string;
+  message: string;
+  onClose: () => void;
+}) => {
+  const getIcon = () => {
+    if (
+      title.includes('Error') ||
+      title.includes('Vacía') ||
+      title.includes('Sin datos') ||
+      title.includes('Duplicado')
+    ) {
+      return { name: 'alert-circle-outline', color: '#E53E3E' };
+    }
+    if (title.includes('Enviado') || title.includes('Éxito')) {
+      return { name: 'check-circle-outline', color: '#38A169' };
+    }
+    if (title.includes('Seleccionar') || title.includes('Requerida')) {
+      return { name: 'home-search-outline', color: '#E53E3E' };
+    }
+    return { name: 'information-outline', color: '#25A4D6' };
+  };
+  const icon = getIcon();
+
+  return (
+    <Modal visible={visible} transparent={true} animationType="fade">
+      <View className="flex-1 justify-center items-center bg-black/60 px-5">
+        <View className="w-full max-w-lg bg-white dark:bg-[#14161A] border-2 border-gray-200 dark:border-1 dark:border-gray-700 rounded-xl shadow-xl p-6">
+          <View className="items-center mb-4">
+            <MaterialCommunityIcons
+              name={icon.name as any}
+              size={50}
+              color={icon.color}
+            />
+          </View>
+
+          <Text className="text-gray-700 dark:text-slate-300 text-xl md:text-2xl font-bold text-center mb-2">
+            {title}
+          </Text>
+
+          <Text className="text-gray-600 dark:text-slate-400 text-base md:text-lg text-center mb-6">
+            {message}
+          </Text>
+
+          <Pressable
+            onPress={onClose}
+            className="bg-blue-500 dark:bg-blue-600 rounded-lg p-4 w-full shadow-md active:bg-blue-700"
+          >
+            <Text className="text-white text-center font-bold text-lg">
+              Aceptar
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
 const DetailRow = ({
   icon,
   label,
@@ -1334,19 +1321,19 @@ const DetailRow = ({
   label: string;
   value: string | number;
 }) => {
-  if (!value) return null; // No mostrar la fila si no hay valor
+  if (!value) return null;
 
   return (
     <View className="flex-row items-center mb-1.5">
       <MaterialCommunityIcons
         name={icon as any}
         size={16}
-        color="#6b7280" // text-gray-500
+        color="#6b7280"
         style={{ width: 20 }}
       />
       <Text
         className="text-sm text-gray-700 dark:text-slate-300 ml-2"
-        numberOfLines={1}
+        numberOfLines={3}
       >
         <Text className="font-bold">{label}: </Text>
         <Text className="font-light">{value}</Text>
@@ -1355,234 +1342,583 @@ const DetailRow = ({
   );
 };
 
-// --- El nuevo BienItem Chingón ---
 const BienItem = ({
   item,
-  onTransferPress,
+  type,
   onEditPress,
   onRequestPress,
+  onChangeStatusPress,
+  // NUEVOS PROPS
+  onSobranteAction, // Función para manejar el click
+  currentSobranteAction, // Para saber cuál está seleccionado y pintarlo de color
+  apiResposeSobrantes,
 }: {
-  item: DataBien;
-  onTransferPress: (item: DataBien) => void;
-  onRequestPress: (item: DataBien) => void;
-  onEditPress: (item: DataBien) => void;
+  item: BienDetallado;
+  type: 'found' | 'missing' | 'extra';
+  onRequestPress: (item: BienDetallado) => void;
+  onEditPress: (item: BienDetallado) => void;
+  onChangeStatusPress: (item: BienDetallado) => void;
+  // Tipos nuevos
+  onSobranteAction?: (item: BienDetallado, action: AccionSobrante) => void;
+  currentSobranteAction?: string;
+  apiResposeSobrantes?: SobranteDetallado;
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  // --- Lógica de Icono y Estado ---
   const iconName = (iconMap[item.bien_clave] || iconMap.default) as any;
-  const estadoKey = item.bien_estado.toLowerCase();
-  const estadoStyleBg = bienEstadosBg[estadoKey] || bienEstadosBg.default;
-  const estadoStyleText =
-    bienEstadosTexto[estadoKey] || bienEstadosTexto.default;
+  const estadoKey = (item.bien_estado || '').toLowerCase(); // Normalizamos
 
-  const estadoDotColor = {
-    activo: 'bg-green-500',
-    mantenimiento: 'bg-yellow-500',
-    inactivo: 'bg-red-500',
-    transaccion: 'bg-gray-500',
-  }[estadoKey];
+  // Aquí ahora 'extravíado' con acento funcionará gracias al mapa actualizado
+  const estadoStyleBg =
+    localBienEstadosBg[estadoKey] || localBienEstadosBg.default;
+  const estadoStyleText =
+    localBienEstadosTexto[estadoKey] || localBienEstadosTexto.default;
+
+  // Agregamos soporte para dot color también
+  const estadoDotColor =
+    {
+      activo: 'bg-green-500',
+      'en tránsito': 'bg-yellow-500',
+      extraviado: 'bg-red-500',
+      extravíado: 'bg-red-500', // Fix Punto 1
+      baja: 'bg-gray-500',
+    }[estadoKey] || 'bg-gray-400';
 
   const iconBgColor = isDark ? 'bg-blue-900/40' : 'bg-blue-100/80';
   const iconColor = isDark ? '#60a5fa' : '#2563eb';
 
-  // --- Función de Toggle con Animación ---
+  const statusColor = {
+    found: 'text-green-600 dark:text-green-400',
+    missing: 'text-red-600 dark:text-red-400',
+    extra: 'text-orange-600 dark:text-orange-400',
+  }[type as 'found' | 'missing' | 'extra'];
+
+  const borderColor = {
+    found: 'border-green-200 dark:border-green-900',
+    missing: 'border-red-200 dark:border-red-900',
+    extra: 'border-orange-200 dark:border-orange-900',
+  }[type];
+
   const toggleExpand = () => {
-    // ¡La magia!
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setIsExpanded(!isExpanded);
   };
 
   return (
-    // La tarjeta principal, en lugar de ser Pressable, contiene el Pressable
     <View className="px-4 mb-3">
-      <View className="w-full bg-white dark:bg-[#14161A] border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg shadow-black/5 overflow-hidden">
-        {/* === SECCIÓN SUPERIOR (HEADER) === */}
-        <Pressable
-          onPress={toggleExpand}
-          className="p-4"
-          android_ripple={{ color: isDark ? '#333' : '#eee' }}
-        >
-          {/* Fila de Icono, Título y Estado */}
-          <View className="flex-row items-center">
-            {/* Icono */}
-            <View
-              className={`w-12 h-12 rounded-lg items-center justify-center ${iconBgColor} mr-3`}
+      <View
+        className={`w-full bg-white dark:bg-[#14161A] border ${borderColor} rounded-xl shadow-lg shadow-black/5 overflow-hidden`}
+      >
+        {type === 'found' && (
+          <>
+            {/* === SECCIÓN SUPERIOR (HEADER) === */}
+            <Pressable
+              onPress={toggleExpand}
+              className="p-4"
+              android_ripple={{ color: isDark ? '#333' : '#eee' }}
             >
-              <MaterialCommunityIcons
-                name={iconName}
-                size={28}
-                color={iconColor}
-              />
-            </View>
+              <View className="flex-row items-center">
+                {/* Icono */}
+                <View
+                  className={`w-12 h-12 rounded-lg items-center justify-center ${iconBgColor} mr-3`}
+                >
+                  <MaterialCommunityIcons
+                    name={iconName}
+                    size={28}
+                    color={iconColor}
+                  />
+                </View>
 
-            {/* Código y Descripción */}
-            <View className="flex-1 mr-2">
-              <Text
-                className="text-base font-bold text-gray-800 dark:text-slate-200"
-                numberOfLines={1}
-              >
-                {item.bien_codigo}
-              </Text>
-              <Text
-                className="text-sm text-gray-500 dark:text-slate-400"
-                numberOfLines={4}
-              >
-                {item.bien_descripcion}
-              </Text>
-            </View>
+                {/* Código y Descripción */}
+                <View className="flex-1 mr-2">
+                  <Text
+                    // Aplicamos el color de estado al código del bien
+                    className={`text-base font-bold ${statusColor}`}
+                    numberOfLines={1}
+                  >
+                    {item.bien_codigo}
+                  </Text>
+                  <Text
+                    className="text-sm text-gray-500 dark:text-slate-400"
+                    numberOfLines={4}
+                  >
+                    {item.bien_descripcion}
+                  </Text>
+                </View>
 
-            {/* Píldora de Estado */}
-            <View
-              className={`flex-row items-center rounded-full px-2.5 py-1 ${estadoStyleBg}`}
+                {/* Píldora de Estado */}
+                <View
+                  className={`flex-row items-center rounded-full px-2.5 py-1 ${estadoStyleBg}`}
+                >
+                  <View
+                    className={`w-2 h-2 rounded-full ${estadoDotColor} mr-1.5`}
+                  />
+                  <Text
+                    className={`text-xs font-bold uppercase ${estadoStyleText}`}
+                  >
+                    {item.bien_estado}
+                  </Text>
+                </View>
+              </View>
+
+              {/* === SECCIÓN DE RESUMEN (SIEMPRE VISIBLE) === */}
+              <View className="flex-row justify-between mt-4">
+                <View className="flex-1 mr-2">
+                  <Text className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase">
+                    Marca / Modelo
+                  </Text>
+                  <Text
+                    className="text-sm font-semibold text-gray-700 dark:text-slate-300"
+                    numberOfLines={2}
+                  >
+                    {(item.bien_marca || 'Sin Marca').replace(/"/g, '')} /{' '}
+                    {item.bien_modelo || 'Sin Modelo'}
+                  </Text>
+                </View>
+                <View className="flex-1 ml-2">
+                  <Text className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase">
+                    Ubicación
+                  </Text>
+                  <Text
+                    className="text-sm font-semibold text-gray-700 dark:text-slate-300"
+                    numberOfLines={3}
+                  >
+                    {item.oficina.nombre}
+                  </Text>
+                </View>
+              </View>
+            </Pressable>
+
+            {/* === SECCIÓN EXPANDIBLE (DETALLES) === */}
+            {isExpanded && (
+              <View className="px-4 pb-4">
+                <View className="h-px bg-gray-200 dark:bg-gray-700 mb-4" />
+                <DetailRow
+                  icon="domain-switch"
+                  label="Ubicacion Actual"
+                  value={item.ubicacion_actual.nombre}
+                />
+
+                <DetailRow
+                  icon="barcode"
+                  label="Serie"
+                  value={item.bien_serie}
+                />
+
+                <DetailRow
+                  icon="archive-cog-outline"
+                  label="Caracteristicas"
+                  value={item.bien_caracteristicas}
+                />
+
+                <DetailRow
+                  icon="cash"
+                  label="Valor"
+                  value={`$ ${Number(item.bien_valor_monetario).toFixed(2)}`}
+                />
+                <DetailRow
+                  icon="calendar-check"
+                  label="Fecha Alta"
+                  value={new Date(item.bien_fecha_alta).toLocaleDateString(
+                    'es-MX',
+                    {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    },
+                  )}
+                />
+                <DetailRow
+                  icon="key-variant"
+                  label="Clave"
+                  value={item.bien_clave}
+                />
+                <DetailRow
+                  icon="file-document-outline"
+                  label="Factura"
+                  value={item.bien_numero_factura}
+                />
+                <DetailRow
+                  icon="truck-delivery-outline"
+                  label="Proveedor"
+                  value={item.bien_provedor}
+                />
+                <DetailRow
+                  icon="tag-outline"
+                  label="Tipo Adquisición"
+                  value={item.bien_tipo_adquisicion}
+                />
+                <DetailRow
+                  icon="counter"
+                  label="Secuencia"
+                  value={item.bien_secuencia}
+                />
+              </View>
+            )}
+          </>
+        )}
+
+        {type === 'missing' && (
+          <>
+            {/* === SECCIÓN SUPERIOR (HEADER) === */}
+            <Pressable
+              onPress={toggleExpand}
+              className="p-4"
+              android_ripple={{ color: isDark ? '#333' : '#eee' }}
             >
-              <View
-                className={`w-2 h-2 rounded-full ${estadoDotColor} mr-1.5`}
-              />
-              <Text
-                className={`text-xs font-bold uppercase ${estadoStyleText}`}
-              >
-                {item.bien_estado}
-              </Text>
-            </View>
-          </View>
+              <View className="flex-row items-center">
+                {/* Icono */}
+                <View
+                  className={`w-12 h-12 rounded-lg items-center justify-center ${iconBgColor} mr-3`}
+                >
+                  <MaterialCommunityIcons
+                    name={iconName}
+                    size={28}
+                    color={iconColor}
+                  />
+                </View>
 
-          {/* === SECCIÓN DE RESUMEN (SIEMPRE VISIBLE) === */}
-          <View className="flex-row justify-between mt-4">
-            {/* Marca y Modelo */}
-            <View className="flex-1 mr-2">
-              <Text className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase">
-                Marca / Modelo
-              </Text>
-              <Text
-                className="text-sm font-semibold text-gray-700 dark:text-slate-300"
-                numberOfLines={2}
-              >
-                {item.bien_marca.replace(/"/g, '')} / {item.bien_modelo}
-              </Text>
-            </View>
-            {/* Ubicación */}
-            <View className="flex-1 ml-2">
-              <Text className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase">
-                Ubicación
-              </Text>
-              <Text
-                className="text-sm font-semibold text-gray-700 dark:text-slate-300"
-                numberOfLines={1}
-              >
-                {item.bien_ubicacion_actual}
-              </Text>
-            </View>
-          </View>
-        </Pressable>
+                {/* Código y Descripción */}
+                <View className="flex-1 mr-2">
+                  <Text
+                    // Aplicamos el color de estado al código del bien
+                    className={`text-base font-bold ${statusColor}`}
+                    numberOfLines={1}
+                  >
+                    {item.bien_codigo}
+                  </Text>
+                  <Text
+                    className="text-sm text-gray-500 dark:text-slate-400"
+                    numberOfLines={4}
+                  >
+                    {item.bien_descripcion}
+                  </Text>
+                </View>
 
-        {/* === SECCIÓN EXPANDIBLE (DETALLES) === */}
-        {isExpanded && (
-          <View className="px-4 pb-4">
-            <View className="h-px bg-gray-200 dark:bg-gray-700 mb-4" />
-            <DetailRow icon="barcode" label="Serie" value={item.bien_serie} />
-            <DetailRow
-              icon="cash"
-              label="Valor"
-              value={`$ ${Number(item.bien_valor_monetario).toFixed(2)}`}
-            />
-            <DetailRow
-              icon="calendar-check"
-              label="Fecha Alta"
-              value={new Date(item.bien_fecha_alta).toLocaleDateString(
-                'es-MX',
-                {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                },
-              )}
-            />
-            <DetailRow
-              icon="key-variant"
-              label="Clave"
-              value={item.bien_clave}
-            />
-            <DetailRow
-              icon="file-document-outline"
-              label="Factura"
-              value={item.bien_numero_factura}
-            />
-            <DetailRow
-              icon="truck-delivery-outline"
-              label="Proveedor"
-              value={item.bien_provedor}
-            />
-            <DetailRow
-              icon="tag-outline"
-              label="Tipo Adquisición"
-              value={item.bien_tipo_adquisicion}
-            />
-            <DetailRow
-              icon="counter"
-              label="Secuencia"
-              value={item.bien_secuencia}
-            />
-          </View>
+                {/* Píldora de Estado */}
+                <View
+                  className={`flex-row items-center rounded-full px-2.5 py-1 ${estadoStyleBg}`}
+                >
+                  <View
+                    className={`w-2 h-2 rounded-full ${estadoDotColor} mr-1.5`}
+                  />
+                  <Text
+                    className={`text-xs font-bold uppercase ${estadoStyleText}`}
+                  >
+                    {item.bien_estado}
+                  </Text>
+                </View>
+              </View>
+
+              {/* === SECCIÓN DE RESUMEN (SIEMPRE VISIBLE) === */}
+              <View className="flex-row justify-between mt-4">
+                <View className="flex-1 mr-2">
+                  <Text className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase">
+                    Marca / Modelo
+                  </Text>
+                  <Text
+                    className="text-sm font-semibold text-gray-700 dark:text-slate-300"
+                    numberOfLines={2}
+                  >
+                    {(item.bien_marca || 'Sin Marca').replace(/"/g, '')} /{' '}
+                    {item.bien_modelo || 'Sin Modelo'}
+                  </Text>
+                </View>
+                <View className="flex-1 ml-2">
+                  <Text className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase">
+                    Ubicación
+                  </Text>
+                  <Text
+                    className="text-sm font-semibold text-gray-700 dark:text-slate-300"
+                    numberOfLines={3}
+                  >
+                    {item.oficina.nombre}
+                  </Text>
+                </View>
+              </View>
+            </Pressable>
+
+            {/* === SECCIÓN EXPANDIBLE (DETALLES) === */}
+            {isExpanded && (
+              <View className="px-4 pb-4">
+                <View className="h-px bg-gray-200 dark:bg-gray-700 mb-4" />
+
+                <DetailRow
+                  icon="domain-switch"
+                  label="Ubicacion Actual"
+                  value={item.ubicacion_actual.nombre}
+                />
+
+                <DetailRow
+                  icon="barcode"
+                  label="Serie"
+                  value={item.bien_serie}
+                />
+
+                <DetailRow
+                  icon="archive-cog-outline"
+                  label="Caracteristicas"
+                  value={item.bien_caracteristicas}
+                />
+
+                <DetailRow
+                  icon="cash"
+                  label="Valor"
+                  value={`$ ${Number(item.bien_valor_monetario).toFixed(2)}`}
+                />
+                <DetailRow
+                  icon="calendar-check"
+                  label="Fecha Alta"
+                  value={new Date(item.bien_fecha_alta).toLocaleDateString(
+                    'es-MX',
+                    {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    },
+                  )}
+                />
+                <DetailRow
+                  icon="key-variant"
+                  label="Clave"
+                  value={item.bien_clave}
+                />
+                <DetailRow
+                  icon="file-document-outline"
+                  label="Factura"
+                  value={item.bien_numero_factura}
+                />
+                <DetailRow
+                  icon="truck-delivery-outline"
+                  label="Proveedor"
+                  value={item.bien_provedor}
+                />
+                <DetailRow
+                  icon="tag-outline"
+                  label="Tipo Adquisición"
+                  value={item.bien_tipo_adquisicion}
+                />
+                <DetailRow
+                  icon="counter"
+                  label="Secuencia"
+                  value={item.bien_secuencia}
+                />
+              </View>
+            )}
+          </>
+        )}
+
+        {type === 'extra' && (
+          <>
+            {/* === SECCIÓN SUPERIOR (HEADER) === */}
+            <Pressable
+              onPress={toggleExpand}
+              className="p-4"
+              android_ripple={{ color: isDark ? '#333' : '#eee' }}
+            >
+              <View className="flex-row items-center">
+                {/* Icono */}
+                <View
+                  className={`w-12 h-12 rounded-lg items-center justify-center ${iconBgColor} mr-3`}
+                >
+                  <MaterialCommunityIcons
+                    name={iconName}
+                    size={28}
+                    color={iconColor}
+                  />
+                </View>
+
+                {/* Código y Descripción */}
+                <View className="flex-1 mr-2">
+                  <Text
+                    className={`text-base font-bold ${statusColor}`}
+                    numberOfLines={1}
+                  >
+                    {/* Usamos apiResposeSobrantes si existe, si no fallback a item (por seguridad) */}
+                    {apiResposeSobrantes?.codigo || item.bien_codigo}
+                  </Text>
+                  <Text
+                    className="text-sm text-gray-500 dark:text-slate-400"
+                    numberOfLines={4}
+                  >
+                    {apiResposeSobrantes?.descripcion || item.bien_descripcion}
+                  </Text>
+                </View>
+              </View>
+
+              {/* === SECCIÓN DE RESUMEN (SIEMPRE VISIBLE) === */}
+              <View className="flex-row justify-between mt-4">
+                <View className="flex-1 mr-2">
+                  <Text className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase">
+                    RESGUARDANTE
+                  </Text>
+                  <Text
+                    className="text-sm font-semibold text-gray-700 dark:text-slate-300"
+                    numberOfLines={2}
+                  >
+                    {apiResposeSobrantes?.resguardante || 'Sin Asignar'}
+                  </Text>
+                </View>
+                <View className="flex-1 ml-2">
+                  <Text className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase">
+                    Ubicación Actual
+                  </Text>
+                  <Text
+                    className="text-sm font-semibold text-gray-700 dark:text-slate-300"
+                    numberOfLines={3}
+                  >
+                    {/* Aquí usamos item.bien_ubicacion_actual porque en displayedData ya mapeamos la oficina */}
+                    {apiResposeSobrantes?.ubicacion_actual ||
+                      item.oficina.nombre}
+                  </Text>
+                </View>
+              </View>
+            </Pressable>
+
+            {/* === SECCIÓN EXPANDIBLE (DETALLES) === */}
+            {isExpanded && (
+              <View className="px-4 pb-4">
+                <View className="h-px bg-gray-200 dark:bg-gray-700 mb-4" />
+
+                <DetailRow
+                  icon="office-building"
+                  label="Departamento Resguardante"
+                  value={
+                    apiResposeSobrantes?.departamento_resguardante ||
+                    'No especificado'
+                  }
+                />
+                <DetailRow
+                  icon="domain"
+                  label="Oficina Pertenencia"
+                  value={
+                    apiResposeSobrantes?.oficina_pertenencia ||
+                    'No especificada'
+                  }
+                />
+              </View>
+            )}
+          </>
         )}
 
         {/* === SECCIÓN DE BOTONES (PIE DE PÁGINA) === */}
         <View className="flex-row border-t border-gray-200 dark:border-gray-700">
-          {/* Botón de Editar */}
-          <Pressable
-            onPress={() => onEditPress(item)}
-            className="flex-1 flex-row items-center justify-center p-3 active:bg-emerald-100 dark:active:bg-emerald-700 border-r border-gray-200 dark:border-gray-700"
-          >
-            <MaterialCommunityIcons
-              name="file-document-edit-outline"
-              size={18}
-              color="#10b981" // emerald-500
-            />
-            <Text className="text-emerald-500 dark:text-emerald-400 font-bold text-sm ml-1.5">
-              Editar
-            </Text>
-          </Pressable>
+          {type === 'found' && (
+            <>
+              <Pressable
+                onPress={() => onEditPress(item)}
+                className="flex-1 flex-row items-center justify-center p-4 active:bg-emerald-100 dark:active:bg-emerald-700/20 border-r border-gray-200 dark:border-gray-700"
+              >
+                <MaterialCommunityIcons
+                  name="file-document-edit-outline"
+                  size={18}
+                  color={isDark ? '#34d399' : '#10b981'} // emerald-400 || emerald-500
+                />
+                <Text
+                  className="text-emerald-500 dark:text-emerald-400 font-bold text-sm ml-1.5"
+                  numberOfLines={1}
+                >
+                  Editar
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => onRequestPress(item)}
+                className="flex-1 flex-row items-center justify-center p-4 active:bg-purple-100 dark:active:bg-purple-700/20 border-r border-gray-200 dark:border-gray-700"
+              >
+                <MaterialCommunityIcons
+                  name="account-switch-outline"
+                  size={18}
+                  color={isDark ? '#c084fc' : '#a855f7'} // purple-400 || purple-500
+                />
+                <Text
+                  className="text-purple-500 dark:text-purple-400 font-bold text-sm ml-1.5"
+                  numberOfLines={1}
+                >
+                  Mover a...
+                </Text>
+              </Pressable>
+            </>
+          )}
 
-          {/* Botón de Traspasar */}
-          <Pressable
-            onPress={() => onTransferPress(item)}
-            className="flex-1 flex-row items-center justify-center p-3 active:bg-blue-100 dark:active:bg-blue-700 border-r border-gray-200 dark:border-gray-700"
-          >
-            <MaterialCommunityIcons
-              name="account-switch-outline"
-              size={18}
-              color="#3B82F6" // blue-500
-            />
-            <Text className="text-blue-500 dark:text-blue-400 font-bold text-sm ml-1.5">
-              Traspasar
-            </Text>
-          </Pressable>
+          {type === 'missing' && (
+            <Pressable
+              onPress={() => onChangeStatusPress(item)}
+              className="flex-1 flex-row items-center justify-center p-4 active:bg-red-100 dark:active:bg-red-700/20"
+            >
+              <MaterialCommunityIcons
+                name="archive-off-outline"
+                size={18}
+                color={isDark ? '#f87171' : '#ef4444'} // red-500
+              />
+              <Text
+                className="text-red-500 dark:text-red-400 font-bold text-sm ml-1.5"
+                numberOfLines={1}
+              >
+                Cambiar Estado
+              </Text>
+            </Pressable>
+          )}
 
-          {/* Botón de Movimiento */}
-          <Pressable
-            onPress={() => onRequestPress(item)}
-            className="flex-1 flex-row items-center justify-center p-3 active:bg-purple-100 dark:active:bg-purple-700"
-          >
-            <MaterialCommunityIcons
-              name="account-switch-outline"
-              size={18}
-              color="#c084fc" // purple-500
-            />
-            <Text className="text-purple-500 dark:text-purple-400 font-bold text-sm ml-1.5">
-              Mover a...
-            </Text>
-          </Pressable>
+          {type === 'extra' && (
+            <>
+              <Pressable
+                onPress={() =>
+                  onSobranteAction && onSobranteAction(item, 'ACTUALIZAR_AQUI')
+                }
+                className={`flex-1 flex-row items-center justify-center p-4 border-r border-gray-200 dark:border-gray-700 
+                  ${
+                    currentSobranteAction === 'ACTUALIZAR_AQUI'
+                      ? 'bg-blue-100 dark:bg-blue-900/40' // Color activo
+                      : 'active:bg-gray-100 dark:active:bg-gray-800'
+                  }`}
+              >
+                <MaterialCommunityIcons
+                  name={
+                    currentSobranteAction === 'ACTUALIZAR_AQUI'
+                      ? 'check-circle'
+                      : 'update'
+                  }
+                  size={18}
+                  color="#3b82f6"
+                />
+                <Text className="text-blue-500 dark:text-blue-400 font-bold text-[10px] ml-1.5 uppercase text-center">
+                  Actualizar Aquí
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() =>
+                  onSobranteAction && onSobranteAction(item, 'REGRESAR_ORIGEN')
+                }
+                className={`flex-1 flex-row items-center justify-center p-4 
+                  ${
+                    currentSobranteAction === 'REGRESO_ORIGEN'
+                      ? 'bg-orange-100 dark:bg-orange-900/40' // Color activo
+                      : 'active:bg-gray-100 dark:active:bg-gray-800'
+                  }`}
+              >
+                <MaterialCommunityIcons
+                  name={
+                    currentSobranteAction === 'REGRESO_ORIGEN'
+                      ? 'check-circle'
+                      : 'keyboard-return'
+                  }
+                  size={18}
+                  color="#f97316"
+                />
+                <Text className="text-orange-500 dark:text-orange-400 font-bold text-[10px] ml-1.5 uppercase text-center">
+                  Regreso Origen
+                </Text>
+              </Pressable>
+            </>
+          )}
         </View>
       </View>
     </View>
   );
 };
-
-// ========================================================================
-// ==================       FIN DEL NUEVO BIENITEM       ==================
-// ========================================================================
 
 const StatusItem = ({
   iconName,
@@ -1615,9 +1951,9 @@ const StatusSummaryCard = ({
 }: {
   counts: {
     activo: number;
-    mantenimiento: number;
-    inactivo: number;
-    transaccion: number;
+    enTransito: number;
+    extraviado: number;
+    baja: number;
   };
   total: number;
 }) => {
@@ -1626,6 +1962,7 @@ const StatusSummaryCard = ({
   return (
     <View className="bg-white dark:bg-[#14161A] border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg my-4 overflow-hidden">
       <View className="flex-row divide-x divide-gray-200 dark:divide-gray-700">
+        {/* Total */}
         <StatusItem
           iconName="apps"
           label="Total"
@@ -1633,6 +1970,7 @@ const StatusSummaryCard = ({
           colorClass="text-blue-500 dark:text-blue-400"
           color={colorScheme === 'light' ? '#3b82f6' : '#60a5fa'}
         />
+        {/* Activos */}
         <StatusItem
           iconName="check-circle-outline"
           label="Activos"
@@ -1640,24 +1978,27 @@ const StatusSummaryCard = ({
           colorClass="text-green-600 dark:text-green-500"
           color={colorScheme === 'light' ? '#16a34a' : '#22c55e'}
         />
+        {/* En Tránsito */}
         <StatusItem
-          iconName="progress-wrench"
-          label="Mantenimiento"
-          count={counts.mantenimiento}
+          iconName="map-search-outline"
+          label="En Tránsito"
+          count={counts.enTransito}
           colorClass="text-yellow-600 dark:text-yellow-500"
           color={colorScheme === 'light' ? '#ca8a04' : '#eab308'}
         />
+        {/* Extraviado */}
         <StatusItem
-          iconName="close-circle-outline"
-          label="Inactivos"
-          count={counts.inactivo}
+          iconName="alert-circle-outline"
+          label="Extraviado"
+          count={counts.extraviado}
           colorClass="text-red-600 dark:text-red-500"
           color={colorScheme === 'light' ? '#dc2626' : '#ef4444'}
         />
+        {/* Baja */}
         <StatusItem
-          iconName="transfer"
-          label="Transaccion"
-          count={counts.transaccion}
+          iconName="archive-arrow-down-outline"
+          label="Baja"
+          count={counts.baja}
           colorClass="text-gray-600 dark:text-gray-500"
           color={colorScheme === 'light' ? '#4b5563' : '#6b7280'}
         />
@@ -1666,7 +2007,7 @@ const StatusSummaryCard = ({
   );
 };
 
-const generatePdfHtml = (data: DataBien[]) => {
+const generatePdfHtml = (data: BienDetallado[]) => {
   const styles = `
     <style>
       body { font-family: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif; font-size: 10px; color: #333; }
@@ -1681,7 +2022,6 @@ const generatePdfHtml = (data: DataBien[]) => {
     </style>
   `;
 
-  // Filas de la tabla
   const tableRows = data
     .map(
       (bien) => `
@@ -1690,14 +2030,13 @@ const generatePdfHtml = (data: DataBien[]) => {
       <td>${bien.bien_secuencia}</td>
       <td>${bien.bien_marca}</td>
       <td>${bien.bien_modelo}</td>
-      <td>${bien.bien_ubicacion_actual}</td>
+      <td>${bien.oficina.nombre}</td>
       <td>${bien.bien_estado}</td>
     </tr>
   `,
     )
-    .join(''); // Une todas las filas
+    .join('');
 
-  // Plantilla HTML completa
   return `
     <html>
       <head>
@@ -1710,7 +2049,7 @@ const generatePdfHtml = (data: DataBien[]) => {
         <h2>Reporte de Levantamiento de Inventario</h2>
         <h3>${dataWorkPlace.title}</h3>
         <p>Reporte generado el: ${new Date().toLocaleString('es-MX')}</p>
-        <p>Total de bienes encontrados: ${data.length}</p>
+        <p>Total de bienes listados: ${data.length}</p>
         
         <table>
           <thead>
@@ -1740,19 +2079,15 @@ export function Gest_InfoScannerQR() {
   const insets = useSafeAreaInsets();
   const keyboardAvoidingBehavior = Platform.OS === 'ios' ? 'padding' : 'height';
 
-  //   const navigation = useNavigation<InfoScannerQRNavigationProp>();
-  // const route = useRoute<InfoScannerQRRouteProp>();
+  const route = useRoute<RouteProp<RootStackParamList, 'Gest_InfoScannerQR'>>();
+  const navigation = useNavigation();
 
-  // const scannerQRRespuesta = route.params;
-  // const { access_token, scannedData } = scannerQRRespuesta;
-  // console.log(
-  //   'Obteniendo la información de los bienes escaneados:' + scannedData,
-  // );
-  // const datosParaMostrar = dataBienes; // <- Reemplazar esto con los datos de la API
+  const { access_token, payload, selectedOffice } = route.params;
 
   const [valueTextInp, setValueTextInp] = useState('');
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(null);
+
   const [itemsTipo, setTipo] = useState([
     {
       label: 'Sin filtro',
@@ -1770,77 +2105,176 @@ export function Gest_InfoScannerQR() {
       value: 'activo',
       icon: () => (
         <MaterialCommunityIcons
-          name="checkbox-blank-circle"
+          name="check-circle-outline"
           size={18}
-          color="#4ade80"
+          color="#4ade80" // Green
         />
       ),
     },
     {
-      label: 'Inactivo',
-      value: 'inactivo',
+      label: 'En tránsito',
+      value: 'en tránsito',
       icon: () => (
         <MaterialCommunityIcons
-          name="checkbox-blank-circle"
+          name="map-search-outline"
           size={18}
-          color="#ef4444"
+          color="#FFA500" // Orange/Yellow
         />
       ),
     },
     {
-      label: 'Mantenimiento',
-      value: 'mantenimiento',
+      label: 'Extraviado',
+      value: 'extraviado',
       icon: () => (
         <MaterialCommunityIcons
-          name="checkbox-blank-circle"
+          name="alert-circle-outline"
           size={18}
-          color="#FFA500"
+          color="#ef4444" // Red
         />
       ),
     },
     {
-      label: 'Transaccion',
-      value: 'transaccion',
+      label: 'Baja',
+      value: 'baja',
       icon: () => (
         <MaterialCommunityIcons
-          name="checkbox-blank-circle"
+          name="archive-arrow-down-outline"
           size={18}
-          color="gray"
+          color="gray" // Gray
         />
       ),
     },
   ]);
 
-  const [isTransferModalVisible, setTransferModalVisible] = useState(false);
   const [isEditModalVisible, setEditModalVisible] = useState(false);
   const [isRequestModalVisible, setRequestModalVisible] = useState(false);
-  const [selectedBien, setSelectedBien] = useState<DataBien | null>(null);
+  const [isChangeStatusModalVisible, setChangeStatusModalVisible] =
+    useState(false);
+  const [selectedBien, setSelectedBien] = useState<BienDetallado | null>(null);
 
-  const displayedData = useMemo(() => {
-    let filteredData = dataBienes;
-    const searchTerm = valueTextInp.toLowerCase().trim();
+  const [targetOffice, setTargetOffice] = useState<{
+    id: number;
+    nombre: string;
+    codigo: string;
+  } | null>(null);
+  const [targetOfficeModalVisible, setTargetOfficeModalVisible] =
+    useState(false);
 
-    if (value && value !== 'sin-filtro') {
-      filteredData = filteredData.filter(
-        (bien) => bien.bien_estado.toLowerCase() === value,
+  const [isLoading, setIsLoading] = useState(false);
+  const [apiResponse, setApiResponse] =
+    useState<CompararBienesRespuesta | null>(null);
+
+  const [activeTab, setActiveTab] = useState('encontrados');
+
+  const [alertInfo, setAlertInfo] = useState({
+    visible: false,
+    title: '',
+    message: '',
+  });
+
+  const [officeSelectionMode, setOfficeSelectionMode] = useState<
+    'MOVE' | 'TRANSIT_MISSING'
+  >('MOVE');
+
+  // Estados Temporales
+  const [tempEdits, setTempEdits] = useState<
+    Record<number, Partial<BienDetallado>>
+  >({});
+  const [tempMoves, setTempMoves] = useState<
+    Record<number, { id_oficina: number; nombre_oficina: string }>
+  >({});
+
+  // CORRECCIÓN IMAGEN 1: Cambiado de 'estado' a 'accion' para coincidir con el uso
+  const [tempFaltantes, setTempFaltantes] = useState<
+    Record<number, { id: number; accion: string; id_oficina_destino?: number }>
+  >({});
+
+  const [tempSobrantes, setTempSobrantes] = useState<
+    Record<number, { id: number; accion: 'ACTUALIZAR_AQUI' | 'REGRESO_ORIGEN' }>
+  >({});
+
+  const loadData = useCallback(async () => {
+    const credenciales: Access_token = { access_token };
+    setIsLoading(true);
+    try {
+      const respuesta: CompararBienesRespuesta = await compararBienes(
+        credenciales,
+        payload,
       );
+      setApiResponse(respuesta);
+    } catch (error) {
+      console.error(error);
+      setAlertInfo({
+        visible: true,
+        title: 'Error',
+        message:
+          'No se pudo conectar con el servidor para actualizar la lista.',
+      });
+    } finally {
+      setIsLoading(false);
     }
+  }, [access_token, payload]);
 
-    if (searchTerm.length > 0) {
-      filteredData = filteredData.filter((bien) => {
-        return Object.entries(bien).some(([key, fieldValue]) => {
-          if (key === 'bien_estado') {
-            return false;
-          }
-          return String(fieldValue).toLowerCase().includes(searchTerm);
-        });
+  useEffect(() => {
+    const initLoad = async () => {
+      setIsLoading(true);
+      await loadData();
+      setIsLoading(false);
+    };
+    initLoad();
+  }, [loadData]);
+
+  const processedData = useMemo(() => {
+    if (!apiResponse) return [];
+
+    if (activeTab === 'encontrados') {
+      return apiResponse.encontrados.map((item) => {
+        const editTemp = tempEdits[item.id];
+        const moveTemp = tempMoves[item.id];
+
+        return {
+          ...item,
+          ...editTemp,
+          temp_moved_to: moveTemp ? moveTemp.nombre_oficina : undefined,
+          bien_ubicacion_actual: moveTemp
+            ? moveTemp.nombre_oficina
+            : item.oficina?.nombre,
+        };
       });
     }
 
-    return filteredData;
-  }, [value, valueTextInp]); // Se recalcula si 'value' (dropdown) o 'valueTextInp' (buscador) cambian
+    if (activeTab === 'faltantes') {
+      return apiResponse.faltantes.map((i) => {
+        const temp = tempFaltantes[i.id];
+        // CORRECCIÓN IMAGEN 3: Ahora 'temp.accion' existe en el tipo
+        return {
+          ...i,
+          bien_estado: temp ? temp.accion : i.bien_estado,
+          bien_ubicacion_actual: i.oficina?.nombre,
+          temp_transit_dest: temp?.id_oficina_destino,
+        };
+      });
+    }
+
+    return apiResponse.sobrantes;
+  }, [apiResponse, activeTab, tempFaltantes, tempEdits, tempMoves]);
+
+  const displayedData = processedData as BienDetallado[];
 
   const EmptyListComponent = () => {
+    const colorScheme = useColorScheme();
+    if (isLoading) {
+      return (
+        <View className="items-center pt-5">
+          <ActivityIndicator
+            size="large"
+            color={colorScheme === 'light' ? 'gray' : 'white'}
+          />
+          <Text className="text-gray-500 mt-4">Cargando datos...</Text>
+        </View>
+      );
+    }
+
     let message = 'No hay bienes asignados para mostrar.';
     const searchTerm = valueTextInp.trim();
 
@@ -1868,21 +2302,7 @@ export function Gest_InfoScannerQR() {
     );
   };
 
-  const handleOpenTransfer = (bien: DataBien) => {
-    setSelectedBien(bien);
-    setTransferModalVisible(true);
-  };
-  const handleCloseTransfer = () => {
-    setTransferModalVisible(false);
-    setSelectedBien(null);
-  };
-  const handleConfirmTransfer = () => {
-    // Lógica para enviar a la API...
-    console.log('Confirmado traspaso de:', selectedBien?.bien_codigo);
-    handleCloseTransfer();
-  };
-
-  const handleOpenEdit = (bien: DataBien) => {
+  const handleOpenEdit = (bien: BienDetallado) => {
     setSelectedBien(bien);
     setEditModalVisible(true);
   };
@@ -1890,30 +2310,137 @@ export function Gest_InfoScannerQR() {
     setEditModalVisible(false);
     setSelectedBien(null);
   };
-  const handleConfirmEdit = (updatedBien: DataBien) => {
-    // Aquí iría tu lógica de API para enviar la solicitud
-    console.log(
-      'Confirmado Editado correctamente para:',
-      selectedBien?.bien_codigo,
-    );
-    console.log('Nuevos datos:', updatedBien);
-    // Aquí llamarías a tu API: await updateBienAPI(updatedBien);
-    // Y luego, al recibir éxito, refrescarías la lista
+  const handleConfirmEdit = async (updatedBien: BienDetallado) => {
+    setTempEdits((prev) => ({
+      ...prev,
+      [updatedBien.id]: {
+        bien_marca: updatedBien.bien_marca,
+        bien_modelo: updatedBien.bien_modelo,
+        bien_serie: updatedBien.bien_serie,
+        bien_descripcion: updatedBien.bien_descripcion,
+        bien_caracteristicas: updatedBien.bien_caracteristicas,
+      },
+    }));
     handleCloseEdit();
+    setAlertInfo({
+      visible: true,
+      title: 'Cambio Guardado Temporalmente',
+      message: 'Este cambio se aplicará al "Subir Levantamiento".',
+    });
   };
 
-  const handleOpenRequest = (bien: DataBien) => {
+  const handleOpenRequest = (bien: BienDetallado) => {
     setSelectedBien(bien);
+    setTargetOffice(null);
+    setOfficeSelectionMode('MOVE');
     setRequestModalVisible(true);
   };
   const handleCloseRequest = () => {
     setRequestModalVisible(false);
-    setSelectedBien(null);
   };
-  const handleConfirmRequest = () => {
-    // Lógica para enviar a la API
-    console.log('Confirmado solicitud de:', selectedBien?.bien_codigo);
+  const handleOpenOfficeSelector = () => {
+    setRequestModalVisible(false);
+    setTargetOfficeModalVisible(true);
+  };
+
+  const handleOpenChangeStatus = (bien: BienDetallado) => {
+    setSelectedBien(bien);
+    setOfficeSelectionMode('TRANSIT_MISSING');
+    setTargetOffice(null);
+    setChangeStatusModalVisible(true);
+  };
+
+  const handleCloseChangeStatus = () => {
+    setChangeStatusModalVisible(false);
+    setTargetOffice(null);
+  };
+
+  // --- LÓGICA DE CONFIRMACIÓN DE ESTADO ACTUALIZADA ---
+  const handleConfirmChangeStatus = async (nuevoEstado: string) => {
+    if (!selectedBien) return;
+
+    if (nuevoEstado === 'en tránsito') {
+      if (!targetOffice) {
+        setChangeStatusModalVisible(false);
+        setTargetOfficeModalVisible(true);
+        return;
+      }
+      setTempFaltantes((prev) => ({
+        ...prev,
+        [selectedBien.id]: {
+          id: selectedBien.id,
+          accion: 'EN_TRANSITO',
+          id_oficina_destino: targetOffice.id,
+        },
+      }));
+      handleCloseChangeStatus();
+    } else if (nuevoEstado === 'activo') {
+      // NUEVO: Manejo del estado ACTIVO
+      setTempFaltantes((prev) => ({
+        ...prev,
+        [selectedBien.id]: {
+          id: selectedBien.id,
+          accion: 'ACTIVO',
+        },
+      }));
+      handleCloseChangeStatus();
+    } else {
+      // Extraviado
+      setTempFaltantes((prev) => ({
+        ...prev,
+        [selectedBien.id]: {
+          id: selectedBien.id,
+          accion: 'EXTRAVIADO',
+        },
+      }));
+      handleCloseChangeStatus();
+    }
+  };
+
+  const handleOfficeSelected = (oficina: any) => {
+    setTargetOffice(oficina);
+    setTimeout(() => {
+      if (officeSelectionMode === 'MOVE') {
+        setRequestModalVisible(true);
+      } else if (officeSelectionMode === 'TRANSIT_MISSING') {
+        setChangeStatusModalVisible(true);
+      }
+    }, 300);
+  };
+
+  const handleSobranteAction = (item: any, action: any) => {
+    setTempSobrantes((p) => ({
+      ...p,
+      [item.id]: { id: item.id, accion: action },
+    }));
+  };
+
+  const handleConfirmRequest = async () => {
+    if (!targetOffice || !selectedBien) {
+      setAlertInfo({
+        visible: true,
+        title: 'Oficina Requerida',
+        message: 'Debes seleccionar una oficina.',
+      });
+      return;
+    }
+    setTempMoves((prev) => ({
+      ...prev,
+      [selectedBien.id]: {
+        id_oficina: targetOffice.id,
+        nombre_oficina: targetOffice.nombre,
+      },
+    }));
     handleCloseRequest();
+    setAlertInfo({
+      visible: true,
+      title: 'Movimiento Pendiente',
+      message: `El bien se moverá a ${targetOffice.nombre} al subir el levantamiento.`,
+    });
+  };
+
+  const handleRestartCapture = () => {
+    navigation.goBack();
   };
 
   return (
@@ -1931,12 +2458,43 @@ export function Gest_InfoScannerQR() {
             paddingBottom: insets.bottom,
           }}
         >
+          <Header dataWorkPlace={dataWorkPlace} />
+
           <FlatList
             data={displayedData}
             ListHeaderComponent={
               <>
-                <Header dataWorkPlace={dataWorkPlace} />
-                <ResumLevantamiento />
+                <ResumLevantamiento
+                  selectedOffice={selectedOffice}
+                  currentData={displayedData}
+                  apiResponse={apiResponse}
+                  onRestart={handleRestartCapture}
+                  activeTab={activeTab}
+                  access_token={access_token}
+                  setAlertInfo={setAlertInfo}
+                  tempFaltantes={tempFaltantes}
+                  tempSobrantes={tempSobrantes}
+                  loadData={loadData}
+                  tempEdits={tempEdits}
+                  tempMoves={tempMoves}
+                  // PASAR LOS SETTERS AQUÍ
+                  setTempEdits={setTempEdits}
+                  setTempMoves={setTempMoves}
+                  setTempFaltantes={setTempFaltantes}
+                  setTempSobrantes={setTempSobrantes}
+                  handleRestartCapture={handleRestartCapture}
+                />
+
+                <TabSelector
+                  activeTab={activeTab}
+                  onSelect={(tab) => {
+                    LayoutAnimation.configureNext(
+                      LayoutAnimation.Presets.easeInEaseOut,
+                    );
+                    setActiveTab(tab);
+                  }}
+                />
+
                 <Filtros
                   searchValue={valueTextInp}
                   onSearchChange={setValueTextInp}
@@ -1952,23 +2510,30 @@ export function Gest_InfoScannerQR() {
             renderItem={({ item }) => (
               <BienItem
                 item={item}
-                onTransferPress={handleOpenTransfer}
+                type={
+                  activeTab === 'faltantes'
+                    ? 'missing'
+                    : activeTab === 'sobrantes'
+                      ? 'extra'
+                      : 'found'
+                }
                 onEditPress={handleOpenEdit}
                 onRequestPress={handleOpenRequest}
+                onChangeStatusPress={handleOpenChangeStatus}
+                onSobranteAction={handleSobranteAction}
+                currentSobranteAction={tempSobrantes[item.id]?.accion}
+                apiResposeSobrantes={
+                  activeTab === 'sobrantes'
+                    ? (item as unknown as SobranteDetallado)
+                    : undefined
+                }
               />
             )}
-            keyExtractor={(item) => item.bien_codigo}
+            keyExtractor={(item) => String(item.id)}
             ListEmptyComponent={EmptyListComponent}
           />
         </View>
       </KeyboardAvoidingView>
-
-      <TransferModal
-        visible={isTransferModalVisible}
-        bien={selectedBien}
-        onClose={handleCloseTransfer}
-        onConfirm={handleConfirmTransfer}
-      />
 
       <EditModal
         visible={isEditModalVisible}
@@ -1980,8 +2545,45 @@ export function Gest_InfoScannerQR() {
       <RequestModal
         visible={isRequestModalVisible}
         bien={selectedBien}
+        targetOffice={targetOffice}
+        onPressSelectOffice={handleOpenOfficeSelector}
         onClose={handleCloseRequest}
         onConfirm={handleConfirmRequest}
+      />
+
+      <ChangeStatusModal
+        visible={isChangeStatusModalVisible}
+        bien={selectedBien}
+        onClose={handleCloseChangeStatus}
+        onConfirm={handleConfirmChangeStatus}
+        selectedOfficeForTransit={
+          officeSelectionMode === 'TRANSIT_MISSING' ? targetOffice : null
+        }
+      />
+
+      <InfoAlertModal
+        visible={alertInfo.visible}
+        title={alertInfo.title}
+        message={alertInfo.message}
+        onClose={() => setAlertInfo({ ...alertInfo, visible: false })}
+      />
+
+      <Select_Oficina_DropDown
+        visible={targetOfficeModalVisible}
+        onClose={() => {
+          setTargetOfficeModalVisible(false);
+          if (selectedBien) {
+            if (officeSelectionMode === 'MOVE') {
+              setRequestModalVisible(true);
+            } else if (officeSelectionMode === 'TRANSIT_MISSING') {
+              setChangeStatusModalVisible(true);
+            }
+          }
+        }}
+        access_token={access_token}
+        onSelect={(oficina) => {
+          handleOfficeSelected(oficina);
+        }}
       />
     </StyleGlobal>
   );

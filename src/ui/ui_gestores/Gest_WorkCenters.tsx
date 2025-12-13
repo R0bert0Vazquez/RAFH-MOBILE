@@ -5,9 +5,6 @@ import {
   Pressable,
   useColorScheme,
   FlatList,
-  Platform,
-  LayoutAnimation,
-  UIManager,
   ActivityIndicator,
 } from 'react-native';
 
@@ -56,18 +53,39 @@ const dataWorkCenters: WorkCenterItem[] = [
   },
 ];
 
-// if (
-//   Platform.OS === 'android' &&
-//   UIManager.setLayoutAnimationEnabledExperimental
-// ) {
-//   UIManager.setLayoutAnimationEnabledExperimental(true);
-// }
+const renderHeader = ({
+  user,
+  isLoadingLogout,
+  handleLogout,
+  colorScheme,
+}: {
+  user: any;
+  isLoadingLogout: boolean;
+  handleLogout: () => void;
+  colorScheme: 'light' | 'dark' | null | undefined;
+}) => (
+  <>
+    <View className="flex-row justify-between items-center w-11/12 mb-1 mt-1 mx-auto">
+      <Image
+        className="w-16 h-16  md:portrait:w-20 md:portrait:h-20 lg:w-24 lg:h-24 mr-2"
+        source={Icon_rafh}
+      />
 
-if (Platform.OS === 'android') {
-  if (UIManager.setLayoutAnimationEnabledExperimental) {
-    UIManager.setLayoutAnimationEnabledExperimental(true);
-  }
-}
+      <Text className="flex-1 text-gray-700 dark:text-slate-200 text-2xl sm:text-2xl md:text-4xl lg:text-5xl mr-1">
+        <Text className="font-extrabold">Bienvenido, </Text>
+        {user.usuario_nombre}
+      </Text>
+
+      <Pressable disabled={isLoadingLogout} onPress={handleLogout}>
+        <MaterialCommunityIcons
+          name="logout"
+          size={40}
+          color={colorScheme === 'light' ? '#374151' : '#94a3b8'}
+        />
+      </Pressable>
+    </View>
+  </>
+);
 
 export function Gest_WorkCenters() {
   const insets = useSafeAreaInsets();
@@ -115,39 +133,9 @@ export function Gest_WorkCenters() {
     });
   };
   const handleSelectItemLongPress = (id: number) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
     setExpandedId(expandedId === id ? null : id);
   };
 
-  const renderHeader = () => (
-    <>
-      <View className="flex-row justify-between items-center w-11/12 mb-5 mt-1 mx-auto">
-        <Image
-          className="w-16 h-16  md:portrait:w-20 md:portrait:h-20 lg:w-24 lg:h-24 mr-2"
-          source={Icon_rafh}
-        />
-
-        <Text className="flex-1 text-gray-700 dark:text-slate-200 text-2xl sm:text-2xl md:text-4xl lg:text-5xl mr-1">
-          <Text className="font-extrabold">Bienvenido, </Text>
-          {user.usuario_nombre}
-        </Text>
-
-        <Pressable disabled={isLoadingLogout} onPress={handleLogout}>
-          <MaterialCommunityIcons
-            name="logout"
-            size={40}
-            color={colorScheme === 'light' ? '#374151' : '#94a3b8'}
-          />
-        </Pressable>
-      </View>
-
-      <View className="mb-3 mx-9">
-        <Text className="text-gray-700 dark:text-slate-300 text-2xl sm:text-2xl md:text-3xl lg:text-5xl font-bold">
-          Centros de trabajo:
-        </Text>
-      </View>
-    </>
-  );
   const renderItem = ({ item }: ItemProps) => (
     <View className="flex-1 justify-center items-center mb-3">
       <View className="w-full md:portrait:w-11/12 lg:portrait:w-11/12 lg:landscape:w-11/12">
@@ -236,11 +224,20 @@ export function Gest_WorkCenters() {
           paddingBottom: insets.bottom,
         }}
       >
+        {renderHeader({ user, isLoadingLogout, handleLogout, colorScheme })}
         <FlatList
           data={dataWorkCenters}
+          ListHeaderComponent={
+            <>
+              <View className="mb-3 mx-9">
+                <Text className="text-gray-700 dark:text-slate-300 text-2xl md:text-3xl lg:text-5xl font-bold italic">
+                  Centros de trabajo:
+                </Text>
+              </View>
+            </>
+          }
           renderItem={renderItem}
           keyExtractor={(item) => item.id.toString()}
-          ListHeaderComponent={renderHeader}
         />
       </View>
     </StyleGlobal>
