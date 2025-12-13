@@ -28,17 +28,11 @@ import {
   DepartamentoItem,
   OficinaSimple,
 } from '@/src/models/types_MainResguardante';
-import {
-  getResguardos_Resguardante,
-  moverBien,
-  solicitarTraspaso,
-  regresarBien,
-  buscarResguardantes,
-  getAreas,
-  getEstructuraArea,
-} from '@/src/controllers/controllers_resguardante/mainResguardante.controller';
 
 import { createEchoInstance } from '@/src/services/echo';
+
+// IMPORTANTE: Importamos el nuevo Hook
+import { useMainResguardanteControllers } from '@/src/controllers/controllers_resguardante/mainResguardante.controller';
 
 const Icon_itch = require('@/assets/icon_itch.png');
 const dataWorkPlace = {
@@ -291,6 +285,10 @@ const MoveModal = ({
   onSuccess: () => void;
   onError: (msg: string) => void;
 }) => {
+  // HOOK: Usamos el hook aquí dentro para tener acceso a las funciones
+  const { getAreas, getEstructuraArea, moverBien } =
+    useMainResguardanteControllers();
+
   const [step, setStep] = useState(1); // 1: Area, 2: Depto, 3: Oficina
   const [areas, setAreas] = useState<AreaItem[]>([]);
   const [deptos, setDeptos] = useState<DepartamentoItem[]>([]);
@@ -325,9 +323,12 @@ const MoveModal = ({
     try {
       const data = await getAreas({ access_token: accessToken });
       setAreas(data);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      onError('No se pudieron cargar las áreas');
+      // Filtramos error de auth
+      if (e.message !== 'Unauthenticated.') {
+        onError('No se pudieron cargar las áreas');
+      }
     } finally {
       setLoadingData(false);
     }
@@ -343,9 +344,11 @@ const MoveModal = ({
       );
       setDeptos(data);
       setStep(2);
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error cargando departamentos', e);
-      onError('Error cargando departamentos');
+      if (e.message !== 'Unauthenticated.') {
+        onError('Error cargando departamentos');
+      }
     } finally {
       setLoadingData(false);
     }
@@ -372,7 +375,9 @@ const MoveModal = ({
       onSuccess();
     } catch (e: any) {
       onClose();
-      onError(e.message || 'No se pudo mover el bien');
+      if (e.message !== 'Unauthenticated.') {
+        onError(e.message || 'No se pudo mover el bien');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -544,6 +549,14 @@ export function Resg_MainResguardante({
 }) {
   const insets = useSafeAreaInsets();
 
+  // Usamos el hook para las funciones de la pantalla principal
+  const {
+    getResguardos_Resguardante,
+    solicitarTraspaso,
+    regresarBien,
+    // getResguardante, // no se usa explicitamente en este snippet, pero disponible
+  } = useMainResguardanteControllers();
+
   // Estados de datos
   const [bienesList, setBienesList] = useState<BienResguardado[]>([]);
   const [loading, setLoading] = useState(true);
@@ -553,14 +566,13 @@ export function Resg_MainResguardante({
     lastPage: 1,
     total: 0,
   });
-  // const [miResguardante, setMiResguardante] = useState<User>(user);
 
   // Filtros Locales (Estado y Búsqueda)
   const [searchText, setSearchText] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   const [filterValue, setFilterValue] = useState('sin-filtro');
 
-  // FILTROS CON ICONOS (SOLICITADO)
+  // FILTROS CON ICONOS
   const [filterItems, setFilterItems] = useState([
     {
       label: 'Sin filtro',
@@ -657,7 +669,6 @@ export function Resg_MainResguardante({
       return () => echo.leave('solicitudes');
     }
   }, []);
-  // });
 
   // Función para mostrar alertas fácilmente
   const showAlert = (
@@ -672,7 +683,7 @@ export function Resg_MainResguardante({
     setAlertInfo((prev) => ({ ...prev, visible: false }));
   };
 
-  // Función Fetch Principal (SOLO CARGA DATOS, NO FILTRA)
+  // Función Fetch Principal
   const fetchBienes = async (page = 1, shouldRefresh = false) => {
     if (page > 1 && page > pagination.lastPage) return;
 
@@ -682,7 +693,6 @@ export function Resg_MainResguardante({
     }
 
     try {
-      // AQUÍ SE QUITA searchText Y filterValue PARA NO SATURAR API
       const data = await getResguardos_Resguardante(
         { access_token },
         page,
@@ -698,8 +708,11 @@ export function Resg_MainResguardante({
         lastPage: data.last_page,
         total: data.total,
       });
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      // Ignorar error de auth para no loguear ruido
+      if (e.message !== 'Unauthenticated.') {
+        console.error(e);
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -751,19 +764,30 @@ export function Resg_MainResguardante({
       'Confirmar Regreso',
       '¿Confirmas que el bien ha llegado físicamente a su origen?',
       async () => {
-        closeAlert(); // Cerramos primero para evitar stacking feo si hay error
-        const success = await regresarBien({ access_token }, bien.id);
-        if (success) {
-          setTimeout(
-            () => showAlert('Éxito', 'Bien marcado como regresado'),
-            300,
-          );
-          fetchBienes(1, true);
-        } else {
-          setTimeout(
-            () => showAlert('Error', 'No se pudo regresar el bien'),
-            300,
-          );
+        closeAlert();
+        try {
+          const success = await regresarBien({ access_token }, bien.id);
+          if (success) {
+            setTimeout(
+              () => showAlert('Éxito', 'Bien marcado como regresado'),
+              300,
+            );
+            fetchBienes(1, true);
+          } else {
+            // Si retorna false sin lanzar excepción, mostramos error genérico
+            setTimeout(
+              () => showAlert('Error', 'No se pudo regresar el bien'),
+              300,
+            );
+          }
+        } catch (e: any) {
+          // Si el hook lanza excepción
+          if (e.message !== 'Unauthenticated.') {
+            setTimeout(
+              () => showAlert('Error', 'No se pudo regresar el bien'),
+              300,
+            );
+          }
         }
       },
     );
@@ -787,7 +811,9 @@ export function Resg_MainResguardante({
       );
       fetchBienes(1, true);
     } catch (e: any) {
-      showAlert('Error', e.message);
+      if (e.message !== 'Unauthenticated.') {
+        showAlert('Error', e.message);
+      }
     }
   };
 
@@ -800,7 +826,7 @@ export function Resg_MainResguardante({
         <Header dataWorkPlace={dataWorkPlace} />
 
         <FlatList
-          data={filteredBienes} // USAMOS LA LISTA FILTRADA LOCALMENTE
+          data={filteredBienes}
           keyExtractor={(item) => item.id.toString()}
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.5}
@@ -809,16 +835,15 @@ export function Resg_MainResguardante({
           contentContainerStyle={{ paddingBottom: 100 }}
           ListHeaderComponent={
             <ResguardanteHeader
-              // itemResguardante={miResguardante}
               itemResguardante={user}
-              dataBienes={filteredBienes} // Pasamos filtrados para que el resumen se actualice visualmente
-              totalBienes={pagination.total} // Total global de DB
+              dataBienes={filteredBienes}
+              totalBienes={pagination.total}
               searchValue={searchText}
-              onSearchChange={setSearchText} // Solo actualiza estado local
+              onSearchChange={setSearchText}
               filterOpen={filterOpen}
               setFilterOpen={setFilterOpen}
               filterValue={filterValue}
-              setFilterValue={setFilterValue} // Solo actualiza estado local
+              setFilterValue={setFilterValue}
               filterItems={filterItems}
               setFilterItems={setFilterItems}
               onPdfGenerate={() =>
@@ -1037,6 +1062,9 @@ const TransferModal = ({
   bien,
   accessToken,
 }: any) => {
+  // HOOK: Usamos el hook aquí también
+  const { buscarResguardantes } = useMainResguardanteControllers();
+
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [selected, setSelected] = useState<any>(null);
@@ -1059,8 +1087,11 @@ const TransferModal = ({
         query,
       );
       setResults(data);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      if (e.message !== 'Unauthenticated.') {
+        // Podrías mostrar alerta aquí o solo log
+      }
     } finally {
       setSearching(false);
     }
@@ -1113,14 +1144,14 @@ const TransferModal = ({
               data={results}
               keyExtractor={(i) => i.id.toString()}
               renderItem={({ item }) => {
-                const tieneUsuario = item.tiene_usuario; // Assuming this property exists on the item
+                const tieneUsuario = item.tiene_usuario;
                 return (
                   <Pressable
                     onPress={() => tieneUsuario && setSelected(item)}
                     disabled={!tieneUsuario}
                     className={`p-3 rounded-lg mb-2 flex-row items-center ${
                       !tieneUsuario
-                        ? 'bg-red-50 dark:bg-red-900/20 opacity-80' // Disabled style
+                        ? 'bg-red-50 dark:bg-red-900/20 opacity-80'
                         : selected?.id === item.id
                           ? 'bg-blue-50 border border-blue-200'
                           : 'bg-gray-50 dark:bg-gray-800'
@@ -1220,13 +1251,12 @@ const StatusSummaryCard = ({ counts, total }: any) => (
 );
 
 const SummaryItem = ({ label, count, color, icon }: any) => {
-  // Mapa de colores exactos para los ICONOS (Hexadecimales de Tailwind)
   const getColorHex = (tailwindClass: string) => {
-    if (tailwindClass.includes('blue')) return '#2563eb'; // blue-600
-    if (tailwindClass.includes('green')) return '#16a34a'; // green-600
-    if (tailwindClass.includes('orange')) return '#ea580c'; // orange-600
-    if (tailwindClass.includes('red')) return '#dc2626'; // red-600
-    if (tailwindClass.includes('gray')) return '#6b7280'; // gray-500
+    if (tailwindClass.includes('blue')) return '#2563eb';
+    if (tailwindClass.includes('green')) return '#16a34a';
+    if (tailwindClass.includes('orange')) return '#ea580c';
+    if (tailwindClass.includes('red')) return '#dc2626';
+    if (tailwindClass.includes('gray')) return '#6b7280';
     return 'gray';
   };
 

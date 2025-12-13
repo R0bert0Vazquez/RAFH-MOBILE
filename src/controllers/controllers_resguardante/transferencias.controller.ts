@@ -1,49 +1,19 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Access_token, User } from '@/src/models/types';
+import { User } from '@/src/models/types';
 import {
   MisTransferenciasResponse,
   Traspaso,
 } from '@/src/models/types_Resg_Transferencias';
-
-// --- Servicio API ---
-export async function getTransferencias(
-  credenciales: Access_token,
-  page: number = 1,
-): Promise<MisTransferenciasResponse> {
-  try {
-    const url = `${process.env.EXPO_PUBLIC_API_URL}/mis-transferencias?page=${page}`;
-
-    const respuesta = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        Authorization: `Bearer ${credenciales.access_token}`,
-      },
-    });
-
-    if (respuesta.status === 401) {
-      const errorData = await respuesta.json();
-      throw new Error(errorData.message || 'Sesión expirada');
-    }
-
-    if (!respuesta.ok) {
-      throw new Error(`Error del servidor: ${respuesta.status}`);
-    }
-
-    const data: MisTransferenciasResponse = await respuesta.json();
-    return data;
-  } catch (error) {
-    console.error('Error en getTransferencias:', error);
-    throw error;
-  }
-}
+import { useApi } from '@/src/hooks/useApi'; // <--- 1. Importamos el hook
 
 // --- Hook Controlador ---
 export const useResgTransferencias = (access_token: string, user: User) => {
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 2. Obtenemos el fetch autenticado
+  const { authenticatedFetch } = useApi();
 
   // Estado de los datos y paginación
   const [transferencias, setTransferencias] = useState<Traspaso[]>([]);
@@ -57,21 +27,41 @@ export const useResgTransferencias = (access_token: string, user: User) => {
       setError(null);
 
       try {
-        const credenciales: Access_token = { access_token };
-        const response = await getTransferencias(credenciales, page);
+        // 3. Movemos la lógica de la URL aquí dentro
+        const url = `${process.env.EXPO_PUBLIC_API_URL}/mis-transferencias?page=${page}`;
+
+        // 4. Usamos authenticatedFetch
+        const respuesta = await authenticatedFetch(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            Authorization: `Bearer ${access_token}`,
+          },
+        });
+
+        // authenticatedFetch ya maneja el 401, validamos el resto
+        if (!respuesta.ok) {
+          throw new Error(`Error del servidor: ${respuesta.status}`);
+        }
+
+        const response: MisTransferenciasResponse = await respuesta.json();
 
         setTransferencias(response.data);
         setCurrentPage(response.current_page);
         setLastPage(response.last_page);
         setTotalRecords(response.total);
       } catch (err: any) {
-        setError(err.message || 'No se pudo cargar el historial.');
+        // 5. Filtramos el error de autenticación para que no salga doble alerta
+        if (err.message !== 'Unauthenticated.') {
+          setError(err.message || 'No se pudo cargar el historial.');
+        }
       } finally {
         setIsLoading(false);
         setRefreshing(false);
       }
     },
-    [access_token, refreshing],
+    [access_token, refreshing, authenticatedFetch],
   );
 
   // Carga inicial

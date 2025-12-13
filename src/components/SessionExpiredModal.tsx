@@ -1,20 +1,11 @@
 import React from 'react';
-import {
-  Modal,
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Dimensions,
-} from 'react-native';
+import { Modal, View, Text, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 interface SessionExpiredModalProps {
   visible: boolean;
   onConfirm: () => void;
 }
-
-const { width } = Dimensions.get('window');
 
 export const SessionExpiredModal = ({
   visible,
@@ -25,90 +16,49 @@ export const SessionExpiredModal = ({
       animationType="fade"
       transparent={true}
       visible={visible}
-      onRequestClose={() => {}} // Bloquea el botón de atrás de Android para obligar a pulsar el botón
+      onRequestClose={() => {}} // Bloquea el botón de atrás de Android
     >
-      <View style={styles.centeredView}>
-        <View style={styles.modalView}>
-          <View style={styles.iconContainer}>
+      {/* Overlay: Fondo oscuro semitransparente (bg-black/60) */}
+      <View className="flex-1 justify-center items-center bg-black/60">
+        {/* Modal View */}
+        {/* Modo Claro: bg-white | Modo Oscuro: bg-[#14161A] (Coincide con tu Login) */}
+        <View className="w-[85%] bg-white dark:bg-[#14161A] rounded-2xl p-6 items-center shadow-lg">
+          {/* Icon Container */}
+          {/* Modo Claro: bg-red-100 | Modo Oscuro: bg-red-900/20 (más sutil) */}
+          <View className="mb-4 p-3 bg-red-100 dark:bg-red-900/20 rounded-full">
             <MaterialCommunityIcons
               name="lock-alert"
               size={50}
-              color="#EF4444"
+              color="#EF4444" // Rojo (red-500) se ve bien en ambos
             />
           </View>
 
-          <Text style={styles.modalTitle}>Sesión Expirada</Text>
-          <Text style={styles.modalText}>
+          {/* Title */}
+          {/* Modo Claro: text-gray-800 | Modo Oscuro: text-slate-200 */}
+          <Text className="mb-2.5 text-center text-xl font-bold text-gray-800 dark:text-slate-200">
+            Sesión Expirada
+          </Text>
+
+          {/* Body Text */}
+          {/* Modo Claro: text-gray-500 | Modo Oscuro: text-slate-400 */}
+          <Text className="mb-6 text-center text-sm leading-5 text-gray-500 dark:text-slate-400">
             Tu token de seguridad ha caducado por inactividad o por seguridad.
             Por favor, inicia sesión nuevamente.
           </Text>
 
+          {/* Button */}
+          {/* bg-blue-500 es tu color primario (#3B82F6) */}
           <TouchableOpacity
-            style={styles.button}
+            className="w-full rounded-xl p-3.5 bg-blue-500 active:bg-blue-600 shadow-sm"
             onPress={onConfirm}
             activeOpacity={0.8}
           >
-            <Text style={styles.textStyle}>Volver a Iniciar Sesión</Text>
+            <Text className="text-white font-bold text-center text-base">
+              Volver a Iniciar Sesión
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  centeredView: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)', // Fondo oscuro semitransparente
-  },
-  modalView: {
-    width: width * 0.85,
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 24,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  iconContainer: {
-    marginBottom: 16,
-    padding: 12,
-    backgroundColor: '#FEE2E2',
-    borderRadius: 50,
-  },
-  modalTitle: {
-    marginBottom: 10,
-    textAlign: 'center',
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1F2937',
-  },
-  modalText: {
-    marginBottom: 24,
-    textAlign: 'center',
-    color: '#6B7280',
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  button: {
-    borderRadius: 12,
-    padding: 14,
-    elevation: 2,
-    backgroundColor: '#3B82F6', // Azul principal
-    width: '100%',
-  },
-  textStyle: {
-    color: 'white',
-    fontWeight: 'bold',
-    textAlign: 'center',
-    fontSize: 16,
-  },
-});

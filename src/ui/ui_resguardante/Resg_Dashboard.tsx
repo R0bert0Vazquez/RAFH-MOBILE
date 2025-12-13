@@ -10,12 +10,10 @@ import {
 import React from 'react';
 import { StyleGlobal } from '@/src/components/StyleGlobal';
 import { Header } from '@/src/components/Header';
-import { SessionExpiredModal } from '@/src/components/SessionExpiredModal'; // Importamos el modal
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useResgDashboard } from '@/src/controllers/controllers_resguardante/dashboard.controller';
 import { User } from '@/src/models/types';
-import { useNavigation } from '@react-navigation/native'; // Importamos hook de navegación
 
 const Icon_itch = require('@/assets/icon_itch.png');
 const dataWorkPlace = {
@@ -33,14 +31,11 @@ export function Resg_Dashboard({
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const navigation = useNavigation<any>(); // Instanciamos navegación
 
-  // Usamos el hook controlador que ahora retorna isSessionExpired
   const {
     isLoading,
     refreshing,
     error,
-    isSessionExpired, // <--- Nueva propiedad
     dashboardData,
     onRefresh,
     getUserName,
@@ -58,17 +53,6 @@ export function Resg_Dashboard({
     accentBlue: '#3B82F6',
     accentGreen: '#10B981',
     accentOrange: '#F59E0B',
-  };
-
-  // Función para redirigir al Login cuando expire la sesión
-  const handleSessionExpired = () => {
-    // Pequeño timeout para asegurar que el modal se cierre visualmente antes de cambiar de stack si fuera necesario
-    setTimeout(() => {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Login' }],
-      });
-    }, 200);
   };
 
   // Componente de Tarjeta de Estadística (StatCard)
@@ -145,13 +129,6 @@ export function Resg_Dashboard({
           paddingHorizontal: insets.left,
         }}
       >
-        {/* --- MODAL DE SESIÓN EXPIRADA --- */}
-        {/* Se coloca aquí para que se sobreponga a todo */}
-        <SessionExpiredModal
-          visible={isSessionExpired}
-          onConfirm={handleSessionExpired}
-        />
-
         <Header dataWorkPlace={dataWorkPlace} />
 
         <ScrollView

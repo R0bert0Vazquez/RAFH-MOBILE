@@ -1,42 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Access_token, User } from '@/src/models/types';
+import { User } from '@/src/models/types';
 import { DashboardResponse } from '@/src/models/types_Resg_Dashboard';
-
-// --- Servicio API ---
-export async function getDashboard(
-  credenciales: Access_token,
-): Promise<DashboardResponse> {
-  try {
-    // Nota: Asegúrate de que process.env.EXPO_PUBLIC_API_URL esté definido en tu env
-    const url = `${process.env.EXPO_PUBLIC_API_URL}/resguardante/dashboard`;
-
-    const respuesta = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        Authorization: `Bearer ${credenciales.access_token}`,
-      },
-    });
-
-    // Detectar 401 Unauthorized explícitamente
-    if (respuesta.status === 401) {
-      const errorData = await respuesta.json();
-      // Lanzamos un error específico con el mensaje que devuelve la API o uno por defecto
-      throw new Error(errorData.message || 'Unauthenticated.');
-    }
-
-    if (!respuesta.ok) {
-      throw new Error(`Error del servidor: ${respuesta.status}`);
-    }
-
-    const dashboardData: DashboardResponse = await respuesta.json();
-    return dashboardData;
-  } catch (error) {
-    console.error('Error en getDashboard:', error);
-    throw error;
-  }
-}
+import { useApi } from '@/src/hooks/useApi'; // <--- Importamos el hook nuevo
 
 // --- Hook Controlador (Lógica de Estado) ---
 export const useResgDashboard = (access_token: string, user: User) => {
@@ -44,8 +9,8 @@ export const useResgDashboard = (access_token: string, user: User) => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Nuevo estado para controlar la expiración de sesión
-  const [isSessionExpired, setIsSessionExpired] = useState(false);
+  // Obtenemos nuestro fetch mejorado
+  const { authenticatedFetch } = useApi();
 
   const [dashboardData, setDashboardData] = useState<DashboardResponse>({
     contadores: {
@@ -62,35 +27,52 @@ export const useResgDashboard = (access_token: string, user: User) => {
 
   const fetchData = useCallback(async () => {
     setError(null);
-    // Reiniciamos el estado de sesión expirada al intentar cargar
-    setIsSessionExpired(false);
 
     try {
-      const credenciales: Access_token = { access_token };
-      const data = await getDashboard(credenciales);
+      const url = `${process.env.EXPO_PUBLIC_API_URL}/resguardante/dashboard`;
+
+      // Usamos authenticatedFetch en lugar de fetch normal
+      const respuesta = await authenticatedFetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          Authorization: `Bearer ${access_token}`,
+        },
+      });
+
+      if (!respuesta.ok) {
+        throw new Error(`Error del servidor: ${respuesta.status}`);
+      }
+
+      const data: DashboardResponse = await respuesta.json();
+      console.log('Dashboard data fetchData:', JSON.stringify(data, null, 2));
       setDashboardData(data);
     } catch (err: any) {
-      // Verificamos si el error es de autenticación
-      if (
-        err.message === 'Unauthenticated.' ||
-        err.message === 'Token is invalid' ||
-        err.message === 'Token has expired'
-      ) {
-        setIsSessionExpired(true);
-        // No seteamos 'error' para que no salga la tarjeta roja de error, sino el modal
-      } else {
+      // Si es 401, el hook authenticatedFetch ya activó el modal global.
+      // Aquí solo manejamos otros errores para mostrar en la UI si es necesario.
+      if (err.message !== 'Unauthenticated.') {
         setError(err.message || 'No se pudo cargar la información.');
       }
     } finally {
       setIsLoading(false);
       setRefreshing(false);
     }
-  }, [access_token]);
+  }, [access_token, authenticatedFetch]);
 
-  // Carga inicial
+  // --- Carga inicial (AQUÍ ESTÁ EL CAMBIO) ---
   useEffect(() => {
+    let isActive = true; // Buena práctica para evitar setState en componente desmontado
+
     fetchData();
-  }, [fetchData]);
+
+    return () => {
+      isActive = false;
+    };
+
+    // ANTES: [fetchData] <-- Esto causaba el bucle
+    // AHORA: Solo depende del token.
+  }, [access_token]);
 
   // Función para Pull-to-Refresh
   const onRefresh = useCallback(() => {
@@ -147,7 +129,6 @@ export const useResgDashboard = (access_token: string, user: User) => {
     isLoading,
     refreshing,
     error,
-    isSessionExpired, // Exportamos el nuevo estado
     dashboardData,
     onRefresh,
     getUserName,

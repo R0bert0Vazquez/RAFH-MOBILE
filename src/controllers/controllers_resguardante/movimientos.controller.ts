@@ -1,50 +1,18 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Access_token, User } from '@/src/models/types';
 import {
   MisMovimientosResponse,
   Movimiento,
 } from '@/src/models/types_Resg_Movimientos';
-
-// --- Servicio API ---
-export async function getMovimientos(
-  credenciales: Access_token,
-  page: number = 1,
-): Promise<MisMovimientosResponse> {
-  try {
-    // Construcción de la URL con el parámetro de página
-    const url = `${process.env.EXPO_PUBLIC_API_URL}/mis-movimientos?page=${page}`;
-
-    const respuesta = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        Authorization: `Bearer ${credenciales.access_token}`,
-      },
-    });
-
-    if (respuesta.status === 401) {
-      const errorData = await respuesta.json();
-      throw new Error(errorData.message || 'Sesión expirada');
-    }
-
-    if (!respuesta.ok) {
-      throw new Error(`Error del servidor: ${respuesta.status}`);
-    }
-
-    const data: MisMovimientosResponse = await respuesta.json();
-    return data;
-  } catch (error) {
-    console.error('Error en getMovimientos:', error);
-    throw error;
-  }
-}
+import { useApi } from '@/src/hooks/useApi'; // <--- 1. Importamos el hook
 
 // --- Hook Controlador ---
 export const useResgMovimientos = (access_token: string) => {
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 2. Obtenemos la función de fetch autenticado
+  const { authenticatedFetch } = useApi();
 
   // Estado de los datos y paginación
   const [movimientos, setMovimientos] = useState<Movimiento[]>([]);
@@ -59,21 +27,45 @@ export const useResgMovimientos = (access_token: string) => {
       setError(null);
 
       try {
-        const credenciales: Access_token = { access_token };
-        const response = await getMovimientos(credenciales, page);
+        // const credenciales: Access_token = { access_token };
+        // const response = await getMovimientos(credenciales, page);
+
+        // 3. Usamos authenticatedFetch en lugar de fetch normal
+        const url = `${process.env.EXPO_PUBLIC_API_URL}/mis-movimientos?page=${page}`;
+
+        const respuesta = await authenticatedFetch(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            Authorization: `Bearer ${access_token}`,
+          },
+        });
+
+        // authenticatedFetch ya verifica el 401, así que solo revisamos si !ok
+        if (!respuesta.ok) {
+          throw new Error(`Error del servidor: ${respuesta.status}`);
+        }
+
+        const response: MisMovimientosResponse = await respuesta.json();
+        console.log('Movimientos data:', JSON.stringify(response, null, 2));
 
         setMovimientos(response.data);
         setCurrentPage(response.current_page);
         setLastPage(response.last_page);
         setTotalRecords(response.total);
       } catch (err: any) {
-        setError(err.message || 'No se pudo cargar el historial.');
+        // 4. Filtramos el error 'Unauthenticated.' para no mostrar la alerta roja
+        //    (ya que el modal estará visible)
+        if (err.message !== 'Unauthenticated.') {
+          setError(err.message || 'No se pudo cargar el historial.');
+        }
       } finally {
         setIsLoading(false);
         setRefreshing(false);
       }
     },
-    [access_token, refreshing],
+    [access_token, refreshing, authenticatedFetch],
   );
 
   // Carga inicial
