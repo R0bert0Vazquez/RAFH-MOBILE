@@ -656,8 +656,8 @@ export function Resg_MainResguardante({
       });
       return () => echo.leave('solicitudes');
     }
-    // }, []);
-  });
+  }, []);
+  // });
 
   // Función para mostrar alertas fácilmente
   const showAlert = (
