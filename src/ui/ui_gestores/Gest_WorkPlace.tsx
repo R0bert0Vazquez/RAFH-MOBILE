@@ -90,9 +90,11 @@ const StatCard = ({ icon, value, label, iconColor, bgColor }: any) => (
 const NotificationCard = ({
   item,
   access_token,
+  onActionSuccess, // <--- NUEVA PROP
 }: {
   item: NotificacionDashboard;
   access_token: string;
+  onActionSuccess: () => void; // <--- TIPO DE LA NUEVA PROP
 }) => {
   const { handleDecision } = useWorkPlaceController();
   const credenciales: Access_token = { access_token };
@@ -100,16 +102,29 @@ const NotificationCard = ({
   const handleAuthorize = async () => {
     try {
       await handleDecision(credenciales, item.id_traspaso, 'Aprobada');
+      // Si todo sale bien, avisamos al padre para que quite la tarjeta
+      onActionSuccess();
     } catch (e: any) {
-      if (e.message !== 'Unauthenticated.') console.error(e);
+      // MEJORA: Si ya fue procesada, también la quitamos para que no estorbe
+      if (e.message && e.message.includes('procesada anteriormente')) {
+        onActionSuccess();
+      } else if (e.message !== 'Unauthenticated.') {
+        console.error(e);
+      }
     }
   };
 
   const handleDeny = async () => {
     try {
       await handleDecision(credenciales, item.id_traspaso, 'Rechazada');
+      // Si todo sale bien, avisamos al padre
+      onActionSuccess();
     } catch (e: any) {
-      if (e.message !== 'Unauthenticated.') console.error(e);
+      if (e.message && e.message.includes('procesada anteriormente')) {
+        onActionSuccess();
+      } else if (e.message !== 'Unauthenticated.') {
+        console.error(e);
+      }
     }
   };
 
@@ -215,10 +230,12 @@ const WorkPlaceHeader = ({
   stats,
   notificaciones,
   access_token,
+  onNotificationHandled, // <--- NUEVA PROP
 }: {
   stats: DashboardStats | undefined; // 🚀 Permitimos undefined para evitar crashes
   notificaciones: NotificacionDashboard | null;
   access_token: string;
+  onNotificationHandled: () => void; // <--- TIPO
 }) => {
   // Valores por defecto seguros si stats es undefined
   const safeStats = stats || {
@@ -293,7 +310,11 @@ const WorkPlaceHeader = ({
             </Text>
           </View>
         ) : (
-          <NotificationCard item={notificaciones} access_token={access_token} />
+          <NotificationCard
+            item={notificaciones}
+            access_token={access_token}
+            onActionSuccess={onNotificationHandled}
+          />
         )}
       </View>
 
@@ -428,25 +449,19 @@ export function Gest_WorkPlace({
     null,
   );
   const [movimientosData, setMovimientosData] = useState<MovimientoItem[]>([]);
-
   const keyboardAvoidingBehavior = Platform.OS === 'ios' ? 'padding' : 'height';
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
-  // Hook del controlador
   const { getDashboard } = useWorkPlaceController();
 
-  const echoRef = useRef<any>(null);
-
-  // 🚀 useFocusEffect: Se ejecuta cada vez que la pantalla gana foco (es visible)
-  // Esto soluciona que al volver de "atrás" se recarguen los datos y se valide el token.
+  // 🚀 CARGA DE DATOS API
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
-
       const loadDashboardData = async () => {
         try {
           setError(null);
-          // Solo ponemos loading si no hay datos previos para no parpadear tanto al volver
+          // Si no hay datos, mostramos loading para el primer fetch
           if (!dashboardData) setIsLoading(true);
 
           const credenciales: Access_token = { access_token: access_token };
@@ -454,7 +469,6 @@ export function Gest_WorkPlace({
 
           if (isActive) {
             setDashboardData(getDashboardRespuesta);
-
             const movimientosProcesados: MovimientoItem[] =
               getDashboardRespuesta.ultimos_movimientos.map((item, index) => ({
                 id: index,
@@ -470,27 +484,43 @@ export function Gest_WorkPlace({
           if (isActive) setIsLoading(false);
         }
       };
-
       loadDashboardData();
-
       return () => {
         isActive = false;
       };
-    }, [access_token, workCenterId]), // Dependencias
+    }, [access_token, workCenterId]),
   );
 
-  // 🚀 useEffect para WebSockets (Se mantiene igual, solo conexión)
+  // 🚀 WEBSOCKETS CON DEBUGGING REAL
   useFocusEffect(
     useCallback(() => {
       if (!access_token) return;
 
-      console.log('🔌 Iniciando servicio de Echo...');
+      console.log('🔌 [WS] Creando instancia...');
       const echo = createEchoInstance(access_token);
-      echoRef.current = echo;
+
+      // ---> DEBUGGING DE CONEXIÓN (AGREGA ESTO) <---
+      // Esto nos dirá si realmente conecta con el servidor o se queda intentando
+      echo.connector.pusher.connection.bind('state_change', (states: any) => {
+        console.log(`🔌 [WS] Estado: ${states.current}`);
+      });
+
+      echo.connector.pusher.connection.bind('connected', () => {
+        console.log('✅ [WS] ¡CONEXIÓN EXITOSA CON EL SOCKET!');
+      });
+
+      echo.connector.pusher.connection.bind('error', (err: any) => {
+        console.error('❌ [WS] Error de conexión:', err);
+      });
+      // ----------------------------------------------
 
       const channel = echo.channel('solicitudes');
 
+      // Escuchar evento CREAR SOLICITUD
+      // NOTA: Asegúrate que el backend envíe exactamente '.solicitud.creada' o 'App\\Events\\SolicitudCreada'
       channel.listen('.solicitud.creada', (eventData: any) => {
+        console.log('🔔 [WS] ¡NOTIFICACIÓN RECIBIDA REAL!', eventData);
+
         const nuevaNotificacion: NotificacionDashboard = {
           id_traspaso: eventData.id,
           bien_nombre: eventData.bien_nombre,
@@ -500,11 +530,14 @@ export function Gest_WorkPlace({
 
         setDashboardData((prevData) => {
           if (!prevData) return null;
+          console.log('✅ [WS] Actualizando UI...');
           return { ...prevData, notificaciones: nuevaNotificacion };
         });
       });
 
+      // Escuchar evento ACTUALIZADA
       channel.listen('.solicitud.actualizada', (eventData: any) => {
+        console.log('🔔 [WS] Evento actualización recibido:', eventData);
         setDashboardData((prevData) => {
           if (!prevData) return null;
           if (prevData.notificaciones?.id_traspaso === eventData.id) {
@@ -515,7 +548,7 @@ export function Gest_WorkPlace({
       });
 
       return () => {
-        console.log('🔌 Desconectando WebSockets...');
+        console.log('🔌 [WS] Desconectando...');
         echo.leave('solicitudes');
         echo.disconnect();
       };
@@ -525,6 +558,14 @@ export function Gest_WorkPlace({
   const handleSelectItem = (item: MovimientoItem) => {
     setExpandedId(expandedId === item.id ? null : item.id);
   };
+
+  // 🚀 Actualización Optimista para eliminar la notificación al Aprobar/Rechazar
+  const handleRemoveNotification = useCallback(() => {
+    setDashboardData((prevData) => {
+      if (!prevData) return null;
+      return { ...prevData, notificaciones: null };
+    });
+  }, []);
 
   // Renderizado Condicional: Loading o Error (solo si no hay datos para mostrar)
   if (isLoading && !dashboardData) {
@@ -594,6 +635,7 @@ export function Gest_WorkPlace({
                   // 🚀 Usamos el operador ? para evitar el crash si dashboardData es null
                   stats={dashboardData?.stats}
                   notificaciones={dashboardData?.notificaciones || null}
+                  onNotificationHandled={handleRemoveNotification} // <--- CONECTAMOS TODO AQUÍ
                 />
               </>
             }

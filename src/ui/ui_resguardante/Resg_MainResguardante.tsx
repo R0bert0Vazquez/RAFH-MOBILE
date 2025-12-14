@@ -797,7 +797,8 @@ export function Resg_MainResguardante({
         {
           traspaso_id_bien: selectedBien.id,
           traspaso_id_usuario_destino: idDestino,
-          traspaso_observaciones: 'Solicitud desde App Movil',
+          traspaso_observaciones:
+            'Solicitud desde traspaso generada por resguardante desde la App Movil',
         },
       );
       setShowTransferModal(false);
@@ -816,8 +817,13 @@ export function Resg_MainResguardante({
   return (
     <StyleGlobal>
       <View
-        style={{ flex: 1, paddingTop: insets.top }}
-        className="bg-gray-50 dark:bg-black"
+        style={{
+          flex: 1,
+          paddingTop: insets.top,
+          paddingLeft: insets.left,
+          paddingRight: insets.right,
+          paddingBottom: insets.bottom,
+        }}
       >
         <Header dataWorkPlace={dataWorkPlace} />
 
@@ -1149,7 +1155,7 @@ const TransferModal = ({
                       !tieneUsuario
                         ? 'bg-red-50 dark:bg-red-900/20 opacity-80'
                         : selected?.id === item.id
-                          ? 'bg-blue-50 border border-blue-200'
+                          ? 'bg-blue-50 border border-blue-200 dark:bg-blue-900/50 dark:border-blue-500'
                           : 'bg-gray-50 dark:bg-gray-800'
                     }`}
                   >
