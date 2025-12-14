@@ -30,7 +30,7 @@ import {
   CompararBienes,
   CompararBienesRespuesta,
 } from '@/src/models/types_BienesResponse';
-import { compararBienes } from '@/src/controllers/controllers_gestor/generateQR.controller';
+import { useGenerateQRController } from '@/src/controllers/controllers_gestor/generateQR.controller';
 
 import { Select_Oficina_DropDown } from '@/src/components/Select_Oficina_DropDownPicker';
 
@@ -406,6 +406,9 @@ export function Gest_GenerateQR({ access_token }: { access_token: string }) {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
 
+  // 🚀 Instanciamos el Hook
+  const { compararBienes } = useGenerateQRController();
+
   const [inputCodes, setInputCodes] = useState<string[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [inputText, setInputText] = useState('');
@@ -535,6 +538,7 @@ export function Gest_GenerateQR({ access_token }: { access_token: string }) {
       const credenciales: Access_token = { access_token };
       console.log('Ver Paylod: ', payload);
 
+      // 🚀 Usamos la función del hook
       const respuesta: CompararBienesRespuesta = await compararBienes(
         credenciales,
         payload,
@@ -543,13 +547,16 @@ export function Gest_GenerateQR({ access_token }: { access_token: string }) {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setApiResponse(respuesta);
       setActiveTab('encontrados');
-    } catch (error) {
-      console.error(error);
-      setAlertInfo({
-        visible: true,
-        title: 'Error',
-        message: 'No se pudo conectar con el servidor.',
-      });
+    } catch (error: any) {
+      // Ignoramos el error de autenticación porque el modal ya se encargará
+      if (error.message !== 'Unauthenticated.') {
+        console.error(error);
+        setAlertInfo({
+          visible: true,
+          title: 'Error',
+          message: 'No se pudo conectar con el servidor.',
+        });
+      }
     } finally {
       setIsLoading(false);
     }

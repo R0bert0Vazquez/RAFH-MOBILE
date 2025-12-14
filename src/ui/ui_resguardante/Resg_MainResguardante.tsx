@@ -12,7 +12,8 @@ import {
   TextInput as NativeTextInput,
 } from 'react-native';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native'; // 🚀
 import { StyleGlobal } from '@/src/components/StyleGlobal';
 import { Header } from '@/src/components/Header';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -549,13 +550,8 @@ export function Resg_MainResguardante({
 }) {
   const insets = useSafeAreaInsets();
 
-  // Usamos el hook para las funciones de la pantalla principal
-  const {
-    getResguardos_Resguardante,
-    solicitarTraspaso,
-    regresarBien,
-    // getResguardante, // no se usa explicitamente en este snippet, pero disponible
-  } = useMainResguardanteControllers();
+  const { getResguardos_Resguardante, solicitarTraspaso, regresarBien } =
+    useMainResguardanteControllers();
 
   // Estados de datos
   const [bienesList, setBienesList] = useState<BienResguardado[]>([]);
@@ -631,57 +627,18 @@ export function Resg_MainResguardante({
     },
   ]);
 
-  // Modales y Selección
   const [selectedBien, setSelectedBien] = useState<BienResguardado | null>(
     null,
   );
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
 
-  // Estado para la Alerta Personalizada
   const [alertInfo, setAlertInfo] = useState<{
     visible: boolean;
     title: string;
     message: string;
     onConfirm?: () => void;
   }>({ visible: false, title: '', message: '' });
-
-  // Carga inicial
-  useEffect(() => {
-    fetchBienes(1, true);
-
-    // Configurar WebSocket
-    if (user.id) {
-      const echo = createEchoInstance(access_token);
-      echo.channel('solicitudes').listen('.solicitud.actualizada', (e: any) => {
-        if (parseInt(e.user_id_destinatario) === user.id) {
-          const title =
-            e.estado === 'Aprobada'
-              ? '¡Solicitud Aprobada!'
-              : 'Solicitud Rechazada';
-          showAlert(
-            title,
-            `El traspaso de "${e.bien_nombre}" fue ${e.estado.toLowerCase()}.`,
-          );
-          fetchBienes(1, true); // Recargar lista
-        }
-      });
-      return () => echo.leave('solicitudes');
-    }
-  }, []);
-
-  // Función para mostrar alertas fácilmente
-  const showAlert = (
-    title: string,
-    message: string,
-    onConfirm?: () => void,
-  ) => {
-    setAlertInfo({ visible: true, title, message, onConfirm });
-  };
-
-  const closeAlert = () => {
-    setAlertInfo((prev) => ({ ...prev, visible: false }));
-  };
 
   // Función Fetch Principal
   const fetchBienes = async (page = 1, shouldRefresh = false) => {
@@ -696,8 +653,8 @@ export function Resg_MainResguardante({
       const data = await getResguardos_Resguardante(
         { access_token },
         page,
-        '', // Enviamos vacío para traer todo
-        '', // Enviamos vacío para traer todo
+        '',
+        '',
       );
 
       setBienesList((prev) =>
@@ -709,7 +666,6 @@ export function Resg_MainResguardante({
         total: data.total,
       });
     } catch (e: any) {
-      // Ignorar error de auth para no loguear ruido
       if (e.message !== 'Unauthenticated.') {
         console.error(e);
       }
@@ -719,7 +675,48 @@ export function Resg_MainResguardante({
     }
   };
 
-  // LOGICA DE FILTRADO LOCAL (useMemo)
+  // 🚀 useFocusEffect: Reemplaza al useEffect de carga inicial
+  useFocusEffect(
+    useCallback(() => {
+      fetchBienes(1, true);
+    }, [access_token]), // Dependencia solo del token
+  );
+
+  // 🚀 useEffect para WebSockets (Mantenemos useEffect porque el socket debe vivir mientras el componente esté montado)
+  // O podemos usar useFocusEffect si queremos desconectar al salir de la pantalla.
+  // Por lo general, socket en useEffect está bien para notificaciones globales de esta pantalla.
+  useEffect(() => {
+    if (user.id) {
+      const echo = createEchoInstance(access_token);
+      echo.channel('solicitudes').listen('.solicitud.actualizada', (e: any) => {
+        if (parseInt(e.user_id_destinatario) === user.id) {
+          const title =
+            e.estado === 'Aprobada'
+              ? '¡Solicitud Aprobada!'
+              : 'Solicitud Rechazada';
+          showAlert(
+            title,
+            `El traspaso de "${e.bien_nombre}" fue ${e.estado.toLowerCase()}.`,
+          );
+          fetchBienes(1, true);
+        }
+      });
+      return () => echo.leave('solicitudes');
+    }
+  }, []);
+
+  const showAlert = (
+    title: string,
+    message: string,
+    onConfirm?: () => void,
+  ) => {
+    setAlertInfo({ visible: true, title, message, onConfirm });
+  };
+
+  const closeAlert = () => {
+    setAlertInfo((prev) => ({ ...prev, visible: false }));
+  };
+
   const filteredBienes = useMemo(() => {
     let result = bienesList;
 
@@ -758,7 +755,6 @@ export function Resg_MainResguardante({
     fetchBienes(1, true);
   };
 
-  // Acciones en Bienes
   const handleRegresarBien = (bien: BienResguardado) => {
     showAlert(
       'Confirmar Regreso',

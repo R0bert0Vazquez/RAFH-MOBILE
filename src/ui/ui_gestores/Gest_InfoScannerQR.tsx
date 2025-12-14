@@ -14,7 +14,12 @@ import {
 } from 'react-native';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
+import {
+  useRoute,
+  RouteProp,
+  useNavigation,
+  useFocusEffect,
+} from '@react-navigation/native';
 import { Access_token, RootStackParamList } from '@/src/models/types';
 
 import { StyleGlobal } from '@/src/components/StyleGlobal';
@@ -31,10 +36,13 @@ import {
   AccionSobrante,
   SobranteDetallado,
 } from '@/src/models/types_BienesResponse';
-import {
-  compararBienes,
-  subirLevantamiento,
-} from '@/src/controllers/controllers_gestor/infoScannerQR.controller';
+
+// import {
+//   compararBienes,
+//   subirLevantamiento,
+// } from '@/src/controllers/controllers_gestor/infoScannerQR.controller';
+// 🚀 Importamos el hook
+import { useInfoScannerQRController } from '@/src/controllers/controllers_gestor/infoScannerQR.controller';
 
 import { iconMap } from '@/src/components/dataBienes';
 import { Select_Oficina_DropDown } from '@/src/components/Select_Oficina_DropDownPicker';
@@ -265,6 +273,9 @@ const ResumLevantamiento = ({
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadModalVisible, setUploadModalVisible] = useState(false);
 
+  // 🚀 Instanciamos el hook aquí para usar subirLevantamiento
+  const { subirLevantamiento } = useInfoScannerQRController();
+
   const statusCounts = useMemo(() => {
     return currentData.reduce(
       (acc, bien) => {
@@ -408,6 +419,8 @@ const ResumLevantamiento = ({
       console.log('🚀 Payload Final:', JSON.stringify(payloadUpload, null, 2));
 
       const credenciales: Access_token = { access_token };
+
+      // 🚀 Usamos la función del hook
       await subirLevantamiento(credenciales, payloadUpload);
 
       handleCloseUploadModal();
@@ -426,13 +439,16 @@ const ResumLevantamiento = ({
 
       handleRestartCapture();
     } catch (error: any) {
-      console.error(error);
+      console.error('Error al subir el levantamiento: ' + error);
       handleCloseUploadModal();
-      setAlertInfo({
-        visible: true,
-        title: 'Error',
-        message: 'No se pudo subir el levantamiento.',
-      });
+
+      if (error.message !== 'Unauthenticated.') {
+        setAlertInfo({
+          visible: true,
+          title: 'Error',
+          message: 'No se pudo subir el levantamiento.',
+        });
+      }
     } finally {
       setIsUploading(false);
     }
@@ -2082,6 +2098,9 @@ export function Gest_InfoScannerQR() {
   const route = useRoute<RouteProp<RootStackParamList, 'Gest_InfoScannerQR'>>();
   const navigation = useNavigation();
 
+  // 🚀 Instanciamos el Hook controlador
+  const { compararBienes } = useInfoScannerQRController();
+
   const { access_token, payload, selectedOffice } = route.params;
 
   const [valueTextInp, setValueTextInp] = useState('');
@@ -2193,6 +2212,7 @@ export function Gest_InfoScannerQR() {
     Record<number, { id: number; accion: 'ACTUALIZAR_AQUI' | 'REGRESO_ORIGEN' }>
   >({});
 
+  // 🚀 Función de carga usando el hook
   const loadData = useCallback(async () => {
     const credenciales: Access_token = { access_token };
     setIsLoading(true);
@@ -2202,27 +2222,36 @@ export function Gest_InfoScannerQR() {
         payload,
       );
       setApiResponse(respuesta);
-    } catch (error) {
-      console.error(error);
-      setAlertInfo({
-        visible: true,
-        title: 'Error',
-        message:
-          'No se pudo conectar con el servidor para actualizar la lista.',
-      });
+    } catch (error: any) {
+      if (error.message !== 'Unauthenticated.') {
+        console.error(error);
+        setAlertInfo({
+          visible: true,
+          title: 'Error',
+          message:
+            'No se pudo conectar con el servidor para actualizar la lista.',
+        });
+      }
     } finally {
       setIsLoading(false);
     }
   }, [access_token, payload]);
 
-  useEffect(() => {
-    const initLoad = async () => {
-      setIsLoading(true);
-      await loadData();
-      setIsLoading(false);
-    };
-    initLoad();
-  }, [loadData]);
+  // 🚀 useFocusEffect: Carga datos al enfocar la pantalla (útil si regresas)
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+      const initLoad = async () => {
+        if (isActive) {
+          await loadData();
+        }
+      };
+      initLoad();
+      return () => {
+        isActive = false;
+      };
+    }, [loadData]),
+  );
 
   const processedData = useMemo(() => {
     if (!apiResponse) return [];

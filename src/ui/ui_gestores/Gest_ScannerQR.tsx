@@ -20,7 +20,7 @@ import { StyleGlobal } from '@/src/components/StyleGlobal';
 import { Header } from '@/src/components/Header';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { RootStackParamList } from '@/src/models/types';
+import { RootStackParamList, Access_token } from '@/src/models/types';
 
 import { Select_Oficina_DropDown } from '@/src/components/Select_Oficina_DropDownPicker';
 
@@ -28,6 +28,8 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { CompararBienes } from '@/src/models/types_BienesResponse';
 
+// 🚀 Importamos el hook
+import { useScannerQRController } from '@/src/controllers/controllers_gestor/scannerQR.controller';
 const Icon_itch = require('@/assets/icon_itch.png');
 
 const dataWorkPlace = {
@@ -476,6 +478,9 @@ export function Gest_ScannerQR({ access_token }: { access_token: string }) {
   const [facing] = useState<CameraType>('back');
   const [permission, requestPermission] = useCameraPermissions();
 
+  // 🚀 Instanciamos el controlador
+  const { compararBienes } = useScannerQRController();
+
   // --- NUEVO: Estado de Oficina Seleccionada ---
   const [selectedOffice, setSelectedOffice] = useState<{
     id: number;
@@ -605,6 +610,7 @@ export function Gest_ScannerQR({ access_token }: { access_token: string }) {
     setScannedData((prevData) => {
       if (prevData.includes(data)) {
         // console.log('Dato duplicado, no se agregará:', data);
+
         setAlertInfo({
           visible: true,
           title: 'QR ya escaneado',
@@ -619,7 +625,7 @@ export function Gest_ScannerQR({ access_token }: { access_token: string }) {
 
     setTimeout(() => {
       setScanned(false);
-    }, 2000);
+    }, 3000);
   };
 
   const handleSubmitInventory = async () => {
@@ -637,19 +643,32 @@ export function Gest_ScannerQR({ access_token }: { access_token: string }) {
 
     setIsSubmitting(true);
     try {
+      if (!selectedOffice) return;
+
+      // 🚀 LLAMADA REAL A LA API USANDO EL HOOK
+      const credenciales: Access_token = { access_token };
+      const payload: CompararBienes = {
+        id_oficina: selectedOffice.id,
+        claves_escaneadas: scannedData as any,
+      };
+
+      await compararBienes(credenciales, payload);
+
       setAlertInfo({
         visible: true,
         title: 'Levantamiento Enviado',
         message: `Se enviaron ${scannedData.length} bienes exitosamente.`,
       });
-    } catch (error) {
-      console.error('Error al enviar inventario:', error);
-      setAlertInfo({
-        visible: true,
-        title: 'Error',
-        message:
-          'No se pudo enviar el levantamiento. Por favor, intenta de nuevo.',
-      });
+    } catch (error: any) {
+      if (error.message !== 'Unauthenticated.') {
+        console.error('Error al enviar inventario:', error);
+        setAlertInfo({
+          visible: true,
+          title: 'Error',
+          message:
+            'No se pudo enviar el levantamiento. Por favor, intenta de nuevo.',
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -663,8 +682,6 @@ export function Gest_ScannerQR({ access_token }: { access_token: string }) {
         id_oficina: selectedOffice.id,
         claves_escaneadas: scannedData as any,
       };
-
-      // console.log('Payload:', payload);
 
       setAlertInfo({ ...alertInfo, visible: false });
       navigation.navigate('Gest_InfoScannerQR', {

@@ -10,7 +10,8 @@ import {
   // Modal,
 } from 'react-native';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { useFocusEffect, useNavigation } from '@react-navigation/native'; // 🚀 Importante
 import { StyleGlobal } from '@/src/components/StyleGlobal';
 import { Header } from '@/src/components/Header';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,7 +20,6 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { LogoutCredenciales, User } from '@/src/models/types';
 import { logoutUsuario } from '@/src/controllers/login.controller';
-import { useNavigation } from '@react-navigation/native';
 
 import { useAccountControllers } from '@/src/controllers/controllers_resguardante/account.controller';
 // import { ResguardanteInfo } from '@/src/models/types_InfoResguardante';
@@ -205,10 +205,6 @@ export function Resg_Account({
   user: User;
 }) {
   const insets = useSafeAreaInsets();
-
-  // Usamos el hook para las funciones de la pantalla principal
-  const { getDashboard } = useAccountControllers();
-
   const colorScheme = useColorScheme();
   const navigation = useNavigation();
 
@@ -220,37 +216,42 @@ export function Resg_Account({
   const [dashboardData, setDashboardData] = useState<DashboardResponse | null>(
     null,
   );
+  // Usamos el hook para las funciones de la pantalla principal
+  const { getDashboard } = useAccountControllers();
 
-  useEffect(() => {
-    let isActive = true; // (Opcional) Bandera para evitar setState si el componente se desmonta
+  // 🚀 useFocusEffect: Carga los datos cada vez que la pantalla gana el foco
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
 
-    try {
       const fetchResguardanteDashboard = async () => {
-        setIsLoading(true);
-        const dashboardResponse = await getDashboard({ access_token });
+        // Solo mostramos loading si no tenemos datos previos para evitar parpadeos al volver
+        if (!dashboardData) setIsLoading(true);
 
-        if (isActive) {
-          // Solo actualizamos si el componente sigue vivo
-          setIsLoading(false);
-          setDashboardData(dashboardResponse);
+        try {
+          const dashboardResponse = await getDashboard({ access_token });
+
+          if (isActive) {
+            setDashboardData(dashboardResponse);
+          }
+        } catch (e: any) {
+          // Ignoramos el error de autenticación (lo maneja el modal global)
+          if (isActive && e.message !== 'Unauthenticated.') {
+            console.error(e);
+          }
+        } finally {
+          if (isActive) setIsLoading(false);
         }
       };
+
       fetchResguardanteDashboard();
-    } catch (e: any) {
-      if (isActive) setIsLoading(false);
-      if (e.message !== 'Unauthenticated.') {
-        console.error(e);
-      }
-    }
 
-    return () => {
-      isActive = false;
-    }; // Cleanup function
-
-    // --- CORRECCIÓN AQUÍ ABAJO ---
-    // Quitamos 'getDashboard' de las dependencias.
-    // Solo recargamos si cambia el token o el usuario.
-  }, [access_token, user.id]);
+      return () => {
+        isActive = false;
+      };
+      // Dependencia solo del token. Evitamos incluir 'getDashboard' para no crear bucles.
+    }, [access_token]),
+  );
 
   const handleLogout = async () => {
     setIsLoading(true);
@@ -258,7 +259,9 @@ export function Resg_Account({
       const credenciales: LogoutCredenciales = {
         access_token: access_token,
       };
+      // Logout no usa el hook interceptor porque si falla (401), igual queremos salir.
       const logoutRespuesta = await logoutUsuario(credenciales);
+
       setTimeout(() => {
         console.log('Logout exitoso:', JSON.stringify(logoutRespuesta));
         setIsLoading(false);
@@ -269,9 +272,12 @@ export function Resg_Account({
       }, 500);
     } catch (err: any) {
       setIsLoading(false);
-      if (err.message) {
-        console.log('Logout error:', err.message);
-      }
+      // Si falla el logout (incluso por 401), forzamos la salida local
+      console.log('Logout error o sesión ya expirada:', err.message);
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' as never }],
+      });
     }
   };
 

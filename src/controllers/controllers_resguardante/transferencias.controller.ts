@@ -64,10 +64,10 @@ export const useResgTransferencias = (access_token: string, user: User) => {
     [access_token, refreshing, authenticatedFetch],
   );
 
-  // Carga inicial
-  useEffect(() => {
-    fetchData(1);
-  }, []);
+  // // Carga inicial
+  // useEffect(() => {
+  //   fetchData(1);
+  // }, []);
 
   // Acciones
   const onRefresh = useCallback(() => {
@@ -148,6 +148,7 @@ export const useResgTransferencias = (access_token: string, user: User) => {
     currentPage,
     lastPage,
     totalRecords,
+    fetchData, // 🚀 Exponemos la función
     onRefresh,
     goToNextPage,
     goToPrevPage,

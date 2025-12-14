@@ -8,17 +8,16 @@ import {
   useColorScheme,
   ActivityIndicator,
 } from 'react-native';
-import React, { useState, memo, useEffect, useRef } from 'react'; // 🚀 Importamos useRef
+import React, { useState, memo, useCallback, useRef } from 'react';
+import { useFocusEffect } from '@react-navigation/native'; // 🚀 IMPORTANTE: Para recargar al volver
 
 import { StyleGlobal } from '@/src/components/StyleGlobal';
 import { Header } from '@/src/components/Header';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-import {
-  getDashboard,
-  handleDecision,
-} from '@/src/controllers/controllers_gestor/workPlace.controller';
+import { useWorkPlaceController } from '@/src/controllers/controllers_gestor/workPlace.controller';
+
 import { DataWorkPlace, Access_token } from '@/src/models/types';
 import {
   DashboardResponse,
@@ -27,7 +26,6 @@ import {
   NotificacionDashboard,
 } from '@/src/models/types_DashboardGestor';
 
-// 🚀 NUEVO: Importamos nuestro servicio de Echo
 import { createEchoInstance } from '@/src/services/echo';
 
 interface MovimientoItem extends MovimientoReciente {
@@ -40,33 +38,33 @@ const dataWorkPlace: DataWorkPlace = {
   image: Icon_itch,
 };
 
-// --- HELPERS DE ESTILO (El toque "Chingón") ---
+// --- HELPERS DE ESTILO ---
 const getStatusConfig = (type: string) => {
-  const t = type.toLowerCase();
+  const t = type ? type.toLowerCase() : '';
   if (t.includes('traspaso'))
     return {
       bg: 'bg-amber-100 dark:bg-amber-900/40',
-      iconColor: '#D97706', // amber-600
+      iconColor: '#D97706',
       iconName: 'swap-horizontal',
       borderColor: 'border-amber-200 dark:border-amber-800',
     };
   if (t.includes('registro') || t.includes('alta'))
     return {
       bg: 'bg-emerald-100 dark:bg-emerald-900/40',
-      iconColor: '#059669', // emerald-600
+      iconColor: '#059669',
       iconName: 'plus-box-multiple-outline',
       borderColor: 'border-emerald-200 dark:border-emerald-800',
     };
   if (t.includes('baja'))
     return {
       bg: 'bg-rose-100 dark:bg-rose-900/40',
-      iconColor: '#E11D48', // rose-600
+      iconColor: '#E11D48',
       iconName: 'delete-alert-outline',
       borderColor: 'border-rose-200 dark:border-rose-800',
     };
   return {
     bg: 'bg-blue-100 dark:bg-blue-900/40',
-    iconColor: '#2563EB', // blue-600
+    iconColor: '#2563EB',
     iconName: 'file-document-outline',
     borderColor: 'border-blue-200 dark:border-blue-800',
   };
@@ -96,17 +94,28 @@ const NotificationCard = ({
   item: NotificacionDashboard;
   access_token: string;
 }) => {
+  const { handleDecision } = useWorkPlaceController();
   const credenciales: Access_token = { access_token };
 
-  const handleAuthorize = () =>
-    handleDecision(credenciales, item.id_traspaso, 'Aprobada');
-  const handleDeny = () =>
-    handleDecision(credenciales, item.id_traspaso, 'Rechazada');
+  const handleAuthorize = async () => {
+    try {
+      await handleDecision(credenciales, item.id_traspaso, 'Aprobada');
+    } catch (e: any) {
+      if (e.message !== 'Unauthenticated.') console.error(e);
+    }
+  };
+
+  const handleDeny = async () => {
+    try {
+      await handleDecision(credenciales, item.id_traspaso, 'Rechazada');
+    } catch (e: any) {
+      if (e.message !== 'Unauthenticated.') console.error(e);
+    }
+  };
 
   return (
     <View className="items-center mb-2 shadow-sm">
       <View className="w-11/12 md:w-10/12 lg:w-9/12 bg-white dark:bg-[#14161A]/80 rounded-3xl border border-gray-100 dark:border-gray-700 overflow-hidden">
-        {/* Header Ticket */}
         <View className="bg-blue-600 px-5 py-3 flex-row items-center justify-between">
           <View className="flex-row items-center">
             <MaterialCommunityIcons
@@ -126,7 +135,6 @@ const NotificationCard = ({
         </View>
 
         <View className="p-5">
-          {/* Info Bien */}
           <View className="flex-row items-center mb-5 bg-slate-100 dark:bg-slate-900/50 p-3 rounded-xl border border-gray-100 dark:border-gray-700">
             <View className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-lg mr-3">
               <MaterialCommunityIcons
@@ -145,7 +153,6 @@ const NotificationCard = ({
             </View>
           </View>
 
-          {/* Flujo Visual */}
           <View className="flex-row items-center justify-between mb-6">
             <View className="flex-1 items-center bg-slate-100 dark:bg-slate-900/50 p-2 rounded-lg border border-gray-100 dark:border-gray-700">
               <Text className="text-[10px] text-gray-400 font-bold uppercase mb-1">
@@ -172,7 +179,6 @@ const NotificationCard = ({
             </View>
           </View>
 
-          {/* Botones */}
           <View className="flex-row gap-3" style={{ gap: 10 }}>
             <Pressable
               onPress={handleDeny}
@@ -184,7 +190,6 @@ const NotificationCard = ({
                 color="white"
                 style={{ marginRight: 4 }}
               />
-              {/* <Text className="text-rose-600 dark:text-rose-400 font-bold"> */}
               <Text className="text-white font-bold">Rechazar</Text>
             </Pressable>
             <Pressable
@@ -205,15 +210,24 @@ const NotificationCard = ({
     </View>
   );
 };
+
 const WorkPlaceHeader = ({
   stats,
   notificaciones,
   access_token,
 }: {
-  stats: DashboardStats;
+  stats: DashboardStats | undefined; // 🚀 Permitimos undefined para evitar crashes
   notificaciones: NotificacionDashboard | null;
   access_token: string;
 }) => {
+  // Valores por defecto seguros si stats es undefined
+  const safeStats = stats || {
+    bienes_registrados: 0,
+    gestores_asignados: 0,
+    areas_asociadas: 0,
+    resguardantes_registrados: 0,
+  };
+
   return (
     <View className="mb-4">
       <View className="items-center mt-2">
@@ -224,28 +238,28 @@ const WorkPlaceHeader = ({
           <View className="flex-row flex-wrap justify-between">
             <StatCard
               icon="archive-check-outline"
-              value={stats?.bienes_registrados}
+              value={safeStats.bienes_registrados}
               label="Bienes"
               iconColor="#2563EB"
               bgColor="bg-blue-50 dark:bg-blue-900/20"
             />
             <StatCard
               icon="account-group-outline"
-              value={stats?.gestores_asignados}
+              value={safeStats.gestores_asignados}
               label="Gestores"
               iconColor="#7C3AED"
               bgColor="bg-purple-50 dark:bg-purple-900/20"
             />
             <StatCard
               icon="floor-plan"
-              value={stats?.areas_asociadas}
+              value={safeStats.areas_asociadas}
               label="Áreas"
               iconColor="#059669"
               bgColor="bg-emerald-50 dark:bg-emerald-900/20"
             />
             <StatCard
               icon="shield-account-outline"
-              value={stats?.resguardantes_registrados}
+              value={safeStats.resguardantes_registrados}
               label="Resguardantes"
               iconColor="#D97706"
               bgColor="bg-amber-50 dark:bg-amber-900/20"
@@ -279,7 +293,6 @@ const WorkPlaceHeader = ({
             </Text>
           </View>
         ) : (
-          // Nota: En RN puro, FlatList horizontal funciona bien, aquí simulo uno solo
           <NotificationCard item={notificaciones} access_token={access_token} />
         )}
       </View>
@@ -293,6 +306,7 @@ const WorkPlaceHeader = ({
     </View>
   );
 };
+
 const ItemComponent = ({
   item,
   isExpanded,
@@ -418,108 +432,102 @@ export function Gest_WorkPlace({
   const keyboardAvoidingBehavior = Platform.OS === 'ios' ? 'padding' : 'height';
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
-  // 🚀 NUEVO: Referencia para guardar la instancia de Echo y no perderla entre renderizados
+  // Hook del controlador
+  const { getDashboard } = useWorkPlaceController();
+
   const echoRef = useRef<any>(null);
 
-  // 1. useEffect para Carga Inicial (HTTP) - Igual que tenías
-  useEffect(() => {
-    const loadDashboardData = async () => {
-      try {
-        setError(null);
-        setIsLoading(true);
+  // 🚀 useFocusEffect: Se ejecuta cada vez que la pantalla gana foco (es visible)
+  // Esto soluciona que al volver de "atrás" se recarguen los datos y se valide el token.
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
 
-        const credenciales: Access_token = { access_token: access_token };
-        const getDashboardRespuesta = await getDashboard(credenciales);
+      const loadDashboardData = async () => {
+        try {
+          setError(null);
+          // Solo ponemos loading si no hay datos previos para no parpadear tanto al volver
+          if (!dashboardData) setIsLoading(true);
 
-        setDashboardData(getDashboardRespuesta);
+          const credenciales: Access_token = { access_token: access_token };
+          const getDashboardRespuesta = await getDashboard(credenciales);
 
-        const movimientosProcesados: MovimientoItem[] =
-          getDashboardRespuesta.ultimos_movimientos.map((item, index) => ({
-            id: index, // Nota: Usar index como ID puede dar problemas al insertar nuevos items dinámicos, idealmente usa un ID único del backend
-            ...item,
-          }));
-        setMovimientosData(movimientosProcesados);
-      } catch (error: any) {
-        if (error.message) setError(error.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadDashboardData();
-  }, [access_token, workCenterId]);
+          if (isActive) {
+            setDashboardData(getDashboardRespuesta);
 
-  // 🚀 useEffect MEJORADO para WebSockets
-  useEffect(() => {
-    if (!access_token) return;
-
-    console.log('🔌 Iniciando servicio de Echo...');
-    const echo = createEchoInstance(access_token);
-    echoRef.current = echo;
-
-    // --- DEBUGGING: Verificar conexión ---
-    // Esto te dirá en la consola si realmente se conectó o falló
-    echo.connector.pusher.connection.bind('connected', () => {
-      console.log(
-        '✅✅✅ WEBSOCKET CONECTADO EXITOSAMENTE A: ' +
-          process.env.EXPO_PUBLIC_REVERB_HOST,
-      );
-    });
-    echo.connector.pusher.connection.bind('error', (err: any) => {
-      console.error('❌❌❌ ERROR DE CONEXIÓN SOCKET:', err);
-    });
-    echo.connector.pusher.connection.bind('disconnected', () => {
-      console.log('⚠️ WebSocket desconectado');
-    });
-
-    // --- SUSCRIPCIÓN AL CANAL ---
-    const channel = echo.channel('solicitudes');
-
-    // 1. EVENTO: Solicitud Creada (Notificación Superior)
-    channel.listen('.solicitud.creada', (eventData: any) => {
-      console.log('🔔 EVENTO RECIBIDO: solicitud.creada', eventData);
-
-      const nuevaNotificacion: NotificacionDashboard = {
-        id_traspaso: eventData.id,
-        bien_nombre: eventData.bien_nombre,
-        emisor: eventData.emisor,
-        receptor: eventData.receptor,
+            const movimientosProcesados: MovimientoItem[] =
+              getDashboardRespuesta.ultimos_movimientos.map((item, index) => ({
+                id: index,
+                ...item,
+              }));
+            setMovimientosData(movimientosProcesados);
+          }
+        } catch (error: any) {
+          if (isActive && error.message !== 'Unauthenticated.') {
+            if (error.message) setError(error.message);
+          }
+        } finally {
+          if (isActive) setIsLoading(false);
+        }
       };
 
-      setDashboardData((prevData) => {
-        if (!prevData) return null;
-        return {
-          ...prevData,
-          notificaciones: nuevaNotificacion,
+      loadDashboardData();
+
+      return () => {
+        isActive = false;
+      };
+    }, [access_token, workCenterId]), // Dependencias
+  );
+
+  // 🚀 useEffect para WebSockets (Se mantiene igual, solo conexión)
+  useFocusEffect(
+    useCallback(() => {
+      if (!access_token) return;
+
+      console.log('🔌 Iniciando servicio de Echo...');
+      const echo = createEchoInstance(access_token);
+      echoRef.current = echo;
+
+      const channel = echo.channel('solicitudes');
+
+      channel.listen('.solicitud.creada', (eventData: any) => {
+        const nuevaNotificacion: NotificacionDashboard = {
+          id_traspaso: eventData.id,
+          bien_nombre: eventData.bien_nombre,
+          emisor: eventData.emisor,
+          receptor: eventData.receptor,
         };
+
+        setDashboardData((prevData) => {
+          if (!prevData) return null;
+          return { ...prevData, notificaciones: nuevaNotificacion };
+        });
       });
-    });
 
-    // 2. EVENTO: Solicitud Actualizada
-    channel.listen('.solicitud.actualizada', (eventData: any) => {
-      console.log('✅ EVENTO RECIBIDO: solicitud.actualizada', eventData);
-
-      setDashboardData((prevData) => {
-        if (!prevData) return null;
-        // Solo limpia la notificación si es la misma que estamos viendo
-        if (prevData.notificaciones?.id_traspaso === eventData.id) {
-          return { ...prevData, notificaciones: null };
-        }
-        return prevData;
+      channel.listen('.solicitud.actualizada', (eventData: any) => {
+        setDashboardData((prevData) => {
+          if (!prevData) return null;
+          if (prevData.notificaciones?.id_traspaso === eventData.id) {
+            return { ...prevData, notificaciones: null };
+          }
+          return prevData;
+        });
       });
-    });
 
-    return () => {
-      console.log('🔌 Desconectando WebSockets...');
-      echo.leave('solicitudes');
-      echo.disconnect();
-    };
-  }, [access_token]);
+      return () => {
+        console.log('🔌 Desconectando WebSockets...');
+        echo.leave('solicitudes');
+        echo.disconnect();
+      };
+    }, [access_token]),
+  );
 
   const handleSelectItem = (item: MovimientoItem) => {
     setExpandedId(expandedId === item.id ? null : item.id);
   };
 
-  if (isLoading) {
+  // Renderizado Condicional: Loading o Error (solo si no hay datos para mostrar)
+  if (isLoading && !dashboardData) {
     return (
       <StyleGlobal>
         <View
@@ -537,7 +545,8 @@ export function Gest_WorkPlace({
     );
   }
 
-  if (error) {
+  // Si hay error y no hay datos previos
+  if (error && !dashboardData) {
     return (
       <StyleGlobal>
         <View
@@ -582,7 +591,8 @@ export function Gest_WorkPlace({
                 <Header dataWorkPlace={dataWorkPlace} />
                 <WorkPlaceHeader
                   access_token={access_token}
-                  stats={dashboardData!.stats}
+                  // 🚀 Usamos el operador ? para evitar el crash si dashboardData es null
+                  stats={dashboardData?.stats}
                   notificaciones={dashboardData?.notificaciones || null}
                 />
               </>
@@ -590,7 +600,7 @@ export function Gest_WorkPlace({
             ListEmptyComponent={
               <View className="items-center mb-3 px-5">
                 <Text className="text-base text-gray-500 dark:text-slate-500 italic text-center">
-                  No tienes ultimos movimientos registrados.
+                  No tienes últimos movimientos registrados.
                 </Text>
               </View>
             }

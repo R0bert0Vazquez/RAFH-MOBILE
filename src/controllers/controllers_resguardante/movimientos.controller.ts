@@ -68,10 +68,10 @@ export const useResgMovimientos = (access_token: string) => {
     [access_token, refreshing, authenticatedFetch],
   );
 
-  // Carga inicial
-  useEffect(() => {
-    fetchData(1);
-  }, []); // Se ejecuta solo al montar
+  // // Carga inicial
+  // useEffect(() => {
+  //   fetchData(1);
+  // }, []); // Se ejecuta solo al montar
 
   // Acciones
   const onRefresh = useCallback(() => {
@@ -114,6 +114,7 @@ export const useResgMovimientos = (access_token: string) => {
     currentPage,
     lastPage,
     totalRecords,
+    fetchData, // 🚀 Exponemos la función
     onRefresh,
     goToNextPage,
     goToPrevPage,

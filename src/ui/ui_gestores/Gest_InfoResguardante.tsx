@@ -11,7 +11,8 @@ import {
   LayoutAnimation,
 } from 'react-native';
 
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
+import { useFocusEffect, RouteProp } from '@react-navigation/native'; // 🚀 Importante
 import { StyleGlobal } from '@/src/components/StyleGlobal';
 import { Header } from '@/src/components/Header';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,24 +25,22 @@ import {
 } from '@/src/components/dataBienes';
 
 import { Access_token, RootStackParamList } from '@/src/models/types';
-import { RouteProp } from '@react-navigation/native';
 
 import {
   BienResguardado,
   BienesResguardanteResponseVerResguardos,
   ResguardanteInfo,
 } from '@/src/models/types_InfoResguardante';
-import {
-  getResguardante,
-  getResguardos_Resguardante,
-} from '@/src/controllers/controllers_gestor/infoResguardante.controller';
+
+// 🚀 Importamos el Hook
+import { useInfoResguardanteController } from '@/src/controllers/controllers_gestor/infoResguardante.controller';
 
 const Icon_itch = require('@/assets/icon_itch.png');
 const dataWorkPlace = {
   title: 'Instituto Tecnológico de Chetumal',
   image: Icon_itch,
 };
-// Define el tipo de la prop 'route' para esta pantalla
+
 type GestInfoResguardanteRouteProp = RouteProp<
   RootStackParamList,
   'Gest_InfoResguardante'
@@ -300,7 +299,6 @@ const StatusSummaryCard = ({
   );
 };
 
-// Modificado para recibir array de datos directamente
 const ResumLevantamiento = ({
   dataBienes,
 }: {
@@ -379,8 +377,6 @@ const ResumLevantamiento = ({
   );
 };
 
-// Corrección: Usamos 'function BienItem' en lugar de una función flecha anónima
-// para que React.memo detecte el nombre del componente (Display Name).
 const BienItem = React.memo(function BienItem({
   item,
 }: {
@@ -579,6 +575,10 @@ export function Gest_InfoResguardante({
   const colorScheme = useColorScheme();
   const keyboardAvoidingBehavior = Platform.OS === 'ios' ? 'padding' : 'height';
 
+  // 🚀 Instanciamos el Hook
+  const { getResguardante, getResguardos_Resguardante } =
+    useInfoResguardanteController();
+
   const [alertInfo, setAlertInfo] = useState({
     visible: false,
     title: '',
@@ -600,15 +600,85 @@ export function Gest_InfoResguardante({
     null,
   );
 
-  // --- 2. FUNCIÓN PARA CARGAR BIENES (PAGINADA) ---
-  // CORRECCIÓN: Envolvemos loadBienes en useCallback
+  // // --- 2. FUNCIÓN PARA CARGAR BIENES (PAGINADA) ---
+  // const loadBienes = useCallback(
+  //   async (page: number) => {
+  //     const credenciales: Access_token = { access_token };
+
+  //     if (page === 1) {
+  //       // Si es carga inicial o refresh, no mostramos loading de footer
+  //     } else {
+  //       setIsFetchingMore(true);
+  //     }
+
+  //     try {
+  //       console.log(`Cargando bienes página ${page}...`);
+  //       const respuesta: BienesResguardanteResponseVerResguardos =
+  //         await getResguardos_Resguardante(credenciales, id_resguardante, page);
+
+  //       if (page === 1) {
+  //         setBienesList(respuesta.data);
+  //       } else {
+  //         // Concatenar nuevos datos
+  //         setBienesList((prev) => [...prev, ...respuesta.data]);
+  //       }
+
+  //       // Actualizar punteros
+  //       setCurrentPage(respuesta.current_page);
+  //       setLastPage(respuesta.last_page);
+  //     } catch (error) {
+  //       console.error('Error cargando bienes:', error);
+  //       if (page > 1) {
+  //         setAlertInfo({
+  //           visible: true,
+  //           title: 'Error de Conexión',
+  //           message: 'No se pudieron cargar más bienes.',
+  //         });
+  //       }
+  //     } finally {
+  //       setIsFetchingMore(false);
+  //     }
+  //   },
+  //   [access_token, id_resguardante],
+  // );
+
+  // // --- 1. CARGA INICIAL (PERFIL + PRIMERA PÁGINA) ---
+  // const loadInitialData = useCallback(async () => {
+  //   setIsLoading(true);
+  //   try {
+  //     const credenciales: Access_token = { access_token };
+
+  //     // 1. Obtener Info del Resguardante (Perfil) - No paginado
+  //     const infoResguardante = await getResguardante(
+  //       credenciales,
+  //       id_resguardante,
+  //     );
+  //     setMiResguardante(infoResguardante);
+
+  //     // 2. Obtener Bienes (Página 1)
+  //     await loadBienes(1);
+  //   } catch (error) {
+  //     console.error(error);
+  //     setAlertInfo({
+  //       visible: true,
+  //       title: 'Error',
+  //       message: 'No se pudo cargar la información inicial.',
+  //     });
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // }, [access_token, id_resguardante, loadBienes]); // CORRECCIÓN: Agregamos loadBienes aquí
+
+  // useEffect(() => {
+  //   loadInitialData();
+  // }, [loadInitialData]);
+
+  // --- FUNCIÓN PARA CARGAR BIENES ---
   const loadBienes = useCallback(
-    async (page: number) => {
+    async (page: number, isActive: boolean = true) => {
       const credenciales: Access_token = { access_token };
 
-      if (page === 1) {
-        // Si es carga inicial o refresh, no mostramos loading de footer
-      } else {
+      if (page > 1) {
         setIsFetchingMore(true);
       }
 
@@ -617,61 +687,76 @@ export function Gest_InfoResguardante({
         const respuesta: BienesResguardanteResponseVerResguardos =
           await getResguardos_Resguardante(credenciales, id_resguardante, page);
 
-        if (page === 1) {
-          setBienesList(respuesta.data);
-        } else {
-          // Concatenar nuevos datos
-          setBienesList((prev) => [...prev, ...respuesta.data]);
+        if (isActive) {
+          if (page === 1) {
+            setBienesList(respuesta.data);
+          } else {
+            setBienesList((prev) => [...prev, ...respuesta.data]);
+          }
+          setCurrentPage(respuesta.current_page);
+          setLastPage(respuesta.last_page);
         }
-
-        // Actualizar punteros
-        setCurrentPage(respuesta.current_page);
-        setLastPage(respuesta.last_page);
-      } catch (error) {
-        console.error('Error cargando bienes:', error);
-        if (page > 1) {
-          setAlertInfo({
-            visible: true,
-            title: 'Error de Conexión',
-            message: 'No se pudieron cargar más bienes.',
-          });
+      } catch (error: any) {
+        if (error.message !== 'Unauthenticated.') {
+          console.error('Error cargando bienes:', error);
+          if (page > 1 && isActive) {
+            setAlertInfo({
+              visible: true,
+              title: 'Error de Conexión',
+              message: 'No se pudieron cargar más bienes.',
+            });
+          }
         }
       } finally {
-        setIsFetchingMore(false);
+        if (isActive) setIsFetchingMore(false);
       }
     },
-    [access_token, id_resguardante],
-  ); // Dependencias de loadBienes
+    [access_token, id_resguardante, getResguardos_Resguardante],
+  );
 
-  // --- 1. CARGA INICIAL (PERFIL + PRIMERA PÁGINA) ---
-  const loadInitialData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const credenciales: Access_token = { access_token };
+  // --- useFocusEffect para Carga Inicial ---
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
 
-      // 1. Obtener Info del Resguardante (Perfil) - No paginado
-      const infoResguardante = await getResguardante(
-        credenciales,
-        id_resguardante,
-      );
-      setMiResguardante(infoResguardante);
+      const loadInitialData = async () => {
+        setIsLoading(true);
+        try {
+          const credenciales: Access_token = { access_token };
 
-      // 2. Obtener Bienes (Página 1)
-      await loadBienes(1);
-    } catch (error) {
-      console.error(error);
-      setAlertInfo({
-        visible: true,
-        title: 'Error',
-        message: 'No se pudo cargar la información inicial.',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [access_token, id_resguardante, loadBienes]); // CORRECCIÓN: Agregamos loadBienes aquí
-  useEffect(() => {
-    loadInitialData();
-  }, [loadInitialData]);
+          // 1. Perfil
+          const infoResguardante = await getResguardante(
+            credenciales,
+            id_resguardante,
+          );
+          if (isActive) setMiResguardante(infoResguardante);
+
+          // 2. Bienes Página 1
+          await loadBienes(1, isActive);
+        } catch (error: any) {
+          if (error.message !== 'Unauthenticated.') {
+            console.error(error);
+            if (isActive) {
+              setAlertInfo({
+                visible: true,
+                title: 'Error',
+                message: 'No se pudo cargar la información inicial.',
+              });
+            }
+          }
+        } finally {
+          if (isActive) setIsLoading(false);
+        }
+      };
+
+      loadInitialData();
+
+      return () => {
+        isActive = false;
+      };
+      // Dependencias clave: si cambia el ID o el token, recargamos
+    }, [id_resguardante, access_token]),
+  );
 
   // --- 3. LÓGICA SCROLL INFINITO ---
   const handleLoadMore = () => {

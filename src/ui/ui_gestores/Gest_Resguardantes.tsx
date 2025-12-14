@@ -13,12 +13,19 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
-import React, { useState, memo, useMemo, useCallback, useEffect } from 'react';
+import React, {
+  useState,
+  memo,
+  useMemo,
+  useCallback,
+  useRef,
+  useEffect,
+} from 'react';
+import { useFocusEffect, useNavigation } from '@react-navigation/native'; // 🚀 useFocusEffect
 
 import { StyleGlobal } from '../../components/StyleGlobal';
 import { Header } from '@/src/components/Header';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { TextInput, DefaultTheme } from 'react-native-paper';
 
@@ -31,12 +38,10 @@ import {
   ResguardanteCreado,
   ResguardanteSimple,
 } from '@/src/models/types_ResguardanteResponse';
-import {
-  getResguardantes,
-  getResguardantesPorOficina,
-  crearResguardante,
-  crearUsuarioResguardante,
-} from '@/src/controllers/controllers_gestor/resguardantes.controller';
+
+// 🚀 Importamos el hook
+import { useResguardantesController } from '@/src/controllers/controllers_gestor/resguardantes.controller';
+
 import { StackNavigationProp } from '@react-navigation/stack';
 
 import { Select_Oficina_DropDown } from '@/src/components/Select_Oficina_DropDownPicker';
@@ -926,17 +931,19 @@ export function Gest_Resguardantes({ access_token }: { access_token: string }) {
   const colorScheme = useColorScheme();
   const keyboardAvoidingBehavior = Platform.OS === 'ios' ? 'padding' : 'height';
 
+  // 🚀 Instanciamos el Hook
+  const {
+    getResguardantes,
+    getResguardantesPorOficina,
+    crearResguardante,
+    crearUsuarioResguardante,
+  } = useResguardantesController();
+
   const [searchValue, setSearchValue] = useState('');
-
-  // Loading general (pantalla completa o inicial)
   const [isLoading, setIsLoading] = useState(false);
-  // Loading para "cargar más" (footer)
   const [isFetchingMore, setIsFetchingMore] = useState(false);
-
-  // ESTADOS DE PAGINACIÓN
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
-
   const [resguardantesList, setResguardantesList] = useState<
     Resguardante[] | ResguardanteSimple[]
   >([]);
@@ -983,75 +990,102 @@ export function Gest_Resguardantes({ access_token }: { access_token: string }) {
   };
   const [addFormData, setAddFormData] = useState(initialFormState);
 
-  // --- FUNCIÓN DE CARGA DE DATOS (MODIFICADA PARA PAGINACIÓN) ---
+  // 1. Definimos loadData con useCallback (igual que antes)
   const loadData = useCallback(
-    async (officeIdToFilter?: number, page: number = 1) => {
+    async (
+      officeIdToFilter?: number,
+      page: number = 1,
+      isActive: boolean = true,
+    ) => {
       const credenciales: Access_token = { access_token };
 
-      // Si es la página 1, mostramos loading principal. Si es paginación, mostramos el de abajo.
       if (page === 1) setIsLoading(true);
       else setIsFetchingMore(true);
 
       try {
         if (officeIdToFilter) {
-          // CASO A: Filtrado por oficina (Devuelve array directo, NO paginado)
           console.log('Cargando por oficina:', officeIdToFilter);
           const respuesta: ResguardanteSimple[] =
             await getResguardantesPorOficina(credenciales, officeIdToFilter);
 
-          setResguardantesList(respuesta);
-          // Reiniciamos paginación para evitar conflictos
-          setCurrentPage(1);
-          setLastPage(1);
+          if (isActive) {
+            setResguardantesList(respuesta);
+            setCurrentPage(1);
+            setLastPage(1);
+          }
         } else {
-          // CASO B: Carga general (Devuelve objeto paginado: ResguardanteResponse)
           console.log(`Cargando todos los resguardantes (Página ${page})...`);
-
-          // IMPORTANTE: Tu controller getResguardantes debe aceptar 'page' ahora
           const respuesta: ResguardanteResponse = await getResguardantes(
             credenciales,
             page,
           );
 
-          if (page === 1) {
-            // Primera carga: Reemplazamos todo
-            setResguardantesList(respuesta.data);
-          } else {
-            // Paginación: Concatenamos los nuevos datos a los existentes
-            setResguardantesList((prevList) => [
-              ...(prevList as Resguardante[]), // Casteo seguro porque estamos en modo paginado
-              ...respuesta.data,
-            ]);
+          if (isActive) {
+            if (page === 1) {
+              setResguardantesList(respuesta.data);
+            } else {
+              setResguardantesList((prevList) => [
+                ...(prevList as Resguardante[]),
+                ...respuesta.data,
+              ]);
+            }
+            setCurrentPage(respuesta.current_page);
+            setLastPage(respuesta.last_page);
           }
-
-          // Actualizamos punteros de paginación
-          setCurrentPage(respuesta.current_page);
-          setLastPage(respuesta.last_page);
         }
-      } catch (error) {
-        console.error(error);
-        setAlertInfo({
-          visible: true,
-          title: 'Error',
-          message:
-            'No se pudo conectar con el servidor para actualizar la lista.',
-        });
-        if (page === 1) setResguardantesList([]);
+      } catch (error: any) {
+        // FILTRO CLAVE: Si es 401, NO hacemos nada (ni logs, ni setState de error)
+        // Esto evita el bucle cuando el modal global se activa.
+        if (error.message !== 'Unauthenticated.') {
+          console.error(error);
+          setAlertInfo({
+            visible: true,
+            title: 'Error',
+            message:
+              'No se pudo conectar con el servidor para actualizar la lista.',
+          });
+        } else {
+          // Si es 401, paramos el loading silenciosamente para no dejar el spinner pegado
+          // pero NO mostramos alerta local.
+        }
       } finally {
-        setIsLoading(false);
-        setIsFetchingMore(false);
+        if (isActive) {
+          if (page === 1) setIsLoading(false);
+          else setIsFetchingMore(false);
+        }
       }
     },
-    [access_token],
+    [access_token, getResguardantes, getResguardantesPorOficina],
   );
 
+  // 2. 🚀 TRUCO ANTI-BUCLE: Usamos useRef para tener siempre la última versión de loadData
+  // sin tener que ponerla en las dependencias de useFocusEffect.
+  const loadDataRef = useRef(loadData);
+
+  // Mantenemos la ref actualizada
   useEffect(() => {
-    const initLoad = async () => {
-      // Carga inicial (Página 1, sin filtro)
-      await loadData(undefined, 1);
-    };
-    initLoad();
+    loadDataRef.current = loadData;
   }, [loadData]);
+
+  // 3. useFocusEffect limpio
+  // Solo se ejecuta si cambia el ID del filtro. NO depende de loadData ni access_token directamente.
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+
+      const initLoad = async () => {
+        // Usamos la ref para llamar a la función
+        setCurrentPage(1);
+        await loadDataRef.current(filterOffice?.id, 1, isActive);
+      };
+
+      initLoad();
+
+      return () => {
+        isActive = false;
+      };
+    }, [filterOffice?.id]), // ÚNICA DEPENDENCIA REAL
+  );
 
   // --- LÓGICA PARA SCROLL INFINITO ---
   const handleLoadMore = () => {
@@ -1121,14 +1155,18 @@ export function Gest_Resguardantes({ access_token }: { access_token: string }) {
     setFilterOffice({ id: oficina.id, nombre: oficina.nombre });
     setFilterOfficeSelectorVisible(false);
     // Al filtrar, forzamos página 1
-    loadData(oficina.id, 1);
+    // loadData(oficina.id, 1);
+
+    // useFocusEffect se encargará de recargar porque cambió filterOffice.id en dependencias
   };
 
   // --- FUNCIÓN PARA LIMPIAR EL FILTRO DE OFICINA ---
   const handleClearFilter = () => {
     setFilterOffice(null);
     // Recargamos todo, empezando por la página 1 (sin pasar ID de oficina)
-    loadData(undefined, 1);
+    // loadData(undefined, 1);
+
+    // useFocusEffect se encargará de recargar
   };
 
   const handleSaveResguardante = async () => {
@@ -1239,7 +1277,6 @@ export function Gest_Resguardantes({ access_token }: { access_token: string }) {
       setAlertInfo({
         visible: true,
         title: 'Usuario Creado',
-        // message: `Se ha creado el usuario para ${selectedResguardanteForUser?.res_nombre} con rol ID: ${userFormData.id_rol}`,
         message: `Se ha creado el usuario para ${respuesta?.usuario?.usuario_nombre} con el correo: ${respuesta?.usuario?.usuario_correo}`,
       });
 

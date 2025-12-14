@@ -67,8 +67,6 @@ export const useAccountControllers = () => {
           },
         );
 
-        // El authenticatedFetch ya maneja el 401.
-        // Aquí manejamos otros errores específicos de tu lógica original.
         if (!respuesta.ok) {
           const errorData = await respuesta.text();
           let mensajeError = `Error ${respuesta.status}`;
@@ -81,12 +79,13 @@ export const useAccountControllers = () => {
           }
           throw new Error(mensajeError);
         }
-        console.log(await JSON.stringify(respuesta, null, 2));
+
         return await respuesta.json();
       } catch (err: any) {
-        // Filtramos el error de autenticación para que no salga doble alerta
         if (err.message !== 'Unauthenticated.') {
-          console.error(err.message || 'No se pudo cargar el historial.');
+          console.error(
+            err.message || 'No se pudo cargar la información de cuenta.',
+          );
         }
         throw err;
       }
@@ -94,9 +93,7 @@ export const useAccountControllers = () => {
     [authenticatedFetch],
   );
 
-  // Retornamos todas las funciones
   return {
-    // getResguardante,
     getDashboard,
   };
 };

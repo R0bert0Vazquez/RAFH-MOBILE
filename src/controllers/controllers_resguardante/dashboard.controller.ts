@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { User } from '@/src/models/types';
 import { DashboardResponse } from '@/src/models/types_Resg_Dashboard';
 import { useApi } from '@/src/hooks/useApi'; // <--- Importamos el hook nuevo
@@ -60,19 +60,19 @@ export const useResgDashboard = (access_token: string, user: User) => {
     }
   }, [access_token, authenticatedFetch]);
 
-  // --- Carga inicial (AQUÍ ESTÁ EL CAMBIO) ---
-  useEffect(() => {
-    let isActive = true; // Buena práctica para evitar setState en componente desmontado
+  // // --- Carga inicial (AQUÍ ESTÁ EL CAMBIO) ---
+  // useEffect(() => {
+  //   let isActive = true; // Buena práctica para evitar setState en componente desmontado
 
-    fetchData();
+  //   fetchData();
 
-    return () => {
-      isActive = false;
-    };
+  //   return () => {
+  //     isActive = false;
+  //   };
 
-    // ANTES: [fetchData] <-- Esto causaba el bucle
-    // AHORA: Solo depende del token.
-  }, [access_token]);
+  //   // ANTES: [fetchData] <-- Esto causaba el bucle
+  //   // AHORA: Solo depende del token.
+  // }, [access_token]);
 
   // Función para Pull-to-Refresh
   const onRefresh = useCallback(() => {
@@ -130,6 +130,7 @@ export const useResgDashboard = (access_token: string, user: User) => {
     refreshing,
     error,
     dashboardData,
+    fetchData, // 🚀 Exponemos fetchData para usarlo en useFocusEffect
     onRefresh,
     getUserName,
     formatDate,

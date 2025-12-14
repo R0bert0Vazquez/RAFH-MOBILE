@@ -7,7 +7,8 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
-import React from 'react';
+import React, { useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native'; // 🚀
 import { StyleGlobal } from '@/src/components/StyleGlobal';
 import { Header } from '@/src/components/Header';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -42,11 +43,20 @@ export function Resg_Movimientos({
     currentPage,
     lastPage,
     totalRecords,
+    fetchData, // 🚀
     onRefresh,
     goToNextPage,
     goToPrevPage,
     formatDate,
   } = useResgMovimientos(access_token);
+
+  // 🚀 useFocusEffect: Recarga (o mantiene) la página 1 al enfocar
+  useFocusEffect(
+    useCallback(() => {
+      // Cargamos la primera página al ganar foco para asegurar datos frescos
+      fetchData(1);
+    }, [access_token, user.id]),
+  );
 
   // Colores (coherentes con el dashboard)
   const colors = {

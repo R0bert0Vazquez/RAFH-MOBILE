@@ -7,7 +7,8 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
-import React from 'react';
+import React, { useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native'; // 🚀
 import { StyleGlobal } from '@/src/components/StyleGlobal';
 import { Header } from '@/src/components/Header';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -42,6 +43,7 @@ export function Resg_Transferencias({
     currentPage,
     lastPage,
     totalRecords,
+    fetchData, // 🚀 Exponemos la función
     onRefresh,
     goToNextPage,
     goToPrevPage,
@@ -49,6 +51,13 @@ export function Resg_Transferencias({
     getStatusConfig,
     getTransferRole,
   } = useResgTransferencias(access_token, user);
+
+  // 🚀 useFocusEffect
+  useFocusEffect(
+    useCallback(() => {
+      fetchData(1);
+    }, [access_token, user.id]),
+  );
 
   // Colores (Sistema de diseño coherente)
   const colors = {
