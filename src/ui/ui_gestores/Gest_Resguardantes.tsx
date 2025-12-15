@@ -1255,6 +1255,18 @@ export function Gest_Resguardantes({ access_token }: { access_token: string }) {
       });
       return;
     }
+
+    // --- NUEVA VALIDACIÓN: Contraseña mayor a 8 caracteres ---
+    if (userFormData.password.length <= 8) {
+      setAlertInfo({
+        visible: true,
+        title: 'Contraseña Invalida',
+        message: 'La contraseña debe ser mayor a 8 caracteres.',
+      });
+      return;
+    }
+    // ---------------------------------------------------------
+
     setIsLoading(true);
 
     try {

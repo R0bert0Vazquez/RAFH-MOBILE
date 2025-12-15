@@ -1105,7 +1105,7 @@ const TransferModal = ({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1 bg-black/60 justify-center px-4"
       >
-        <View className="bg-white dark:bg-[#14161A] rounded-xl overflow-hidden max-h-[70%]">
+        <View className="bg-white dark:bg-[#14161A] rounded-xl overflow-hidden max-h-[85%] android:max-h-[85%]">
           <View className="p-4 border-b border-gray-100 dark:border-gray-700 flex-row justify-between">
             <Text className="font-bold text-lg dark:text-white">
               Traspasar Bien

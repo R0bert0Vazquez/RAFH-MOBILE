@@ -35,6 +35,9 @@ import {
 // 🚀 Importamos el Hook
 import { useInfoResguardanteController } from '@/src/controllers/controllers_gestor/infoResguardante.controller';
 
+// 🚀 1. IMPORTAMOS EL GENERADOR DE PDF
+import { generarYCompartirValeResguardo } from '@/src/components/PDFGenerator_ValeResguardo';
+
 const Icon_itch = require('@/assets/icon_itch.png');
 const dataWorkPlace = {
   title: 'Instituto Tecnológico de Chetumal',
@@ -143,9 +146,11 @@ const InfoAlertModal = ({
 const ResguardanteHeader = ({
   itemResguardante,
   dataBienes,
+  onPdfGenerate, // <--- Nueva prop recibida
 }: {
   itemResguardante: ResguardanteInfo;
   dataBienes: BienResguardado[];
+  onPdfGenerate: () => void; // <--- Tipo función
 }) => {
   return (
     <View className="items-center px-4">
@@ -205,7 +210,10 @@ const ResguardanteHeader = ({
           <View className="h-2 bg-gray-50 dark:bg-black/20 border-t border-gray-100 dark:border-gray-800" />
 
           {/* Componente de Resumen */}
-          <ResumLevantamiento dataBienes={dataBienes} />
+          <ResumLevantamiento
+            dataBienes={dataBienes}
+            onPdfGenerate={onPdfGenerate}
+          />
         </View>
       </View>
     </View>
@@ -301,8 +309,10 @@ const StatusSummaryCard = ({
 
 const ResumLevantamiento = ({
   dataBienes,
+  onPdfGenerate, // <--- Nueva prop
 }: {
   dataBienes: BienResguardado[];
+  onPdfGenerate: () => void;
 }) => {
   const colorScheme = useColorScheme();
   const [isLoadingPdf, setIsLoadingPdf] = useState(false);
@@ -329,6 +339,18 @@ const ResumLevantamiento = ({
     );
   }, [dataBienes]);
 
+  // Handler local para manejar el loading
+  const handlePressPdf = async () => {
+    setIsLoadingPdf(true);
+    try {
+      await onPdfGenerate();
+    } catch (error) {
+      console.error('Error generando PDF', error);
+    } finally {
+      setIsLoadingPdf(false);
+    }
+  };
+
   return (
     <>
       <View className="px-4 md:px-6 lg:px-8 pt-2 pb-2">
@@ -351,6 +373,7 @@ const ResumLevantamiento = ({
         <StatusSummaryCard counts={statusCounts} total={dataBienes.length} />
 
         <Pressable
+          onPress={handlePressPdf} // <--- Usamos el handler
           disabled={isLoadingPdf}
           className={`flex-row items-center justify-center rounded-lg p-3.5 my-2 ${
             isLoadingPdf
@@ -388,30 +411,67 @@ const BienItem = React.memo(function BienItem({
 
   // --- Lógica de Icono y Estado ---
   const iconName = (iconMap[item.bien_clave] || iconMap.default) as any;
-  const estadoKey = item.bien_estado.toLowerCase();
 
-  // Estilos existentes
-  const estadoStyleBg = bienEstadosBg[estadoKey] || bienEstadosBg.default;
+  // 1. Normalizamos a minúsculas para comparar
+  const estadoKey = (item.bien_estado || '').toLowerCase().trim();
+
+  // 2. Definimos estilos locales para asegurar que "En tránsito" tenga color
+  //    (Esto sobreescribe o complementa lo que venga de dataBienes si falta)
+
+  const localEstadoBg: Record<string, string> = {
+    activo: 'bg-green-100 dark:bg-green-900/30',
+    'en tránsito': 'bg-yellow-100 dark:bg-yellow-900/30',
+    'en transito': 'bg-yellow-100 dark:bg-yellow-900/30',
+    extraviado: 'bg-red-100 dark:bg-red-900/30',
+    extravíado: 'bg-red-100 dark:bg-red-900/30',
+    baja: 'bg-gray-100 dark:bg-gray-800',
+  };
+
+  const localEstadoText: Record<string, string> = {
+    activo: 'text-green-700 dark:text-green-400',
+    'en tránsito': 'text-yellow-700 dark:text-yellow-400',
+    'en transito': 'text-yellow-700 dark:text-yellow-400',
+    extraviado: 'text-red-700 dark:text-red-400',
+    extravíado: 'text-red-700 dark:text-red-400',
+    baja: 'text-gray-700 dark:text-gray-400',
+  };
+
+  // Usamos el de dataBienes si existe, si no, usamos el local, si no, default gris
+  const estadoStyleBg =
+    bienEstadosBg[estadoKey] ||
+    localEstadoBg[estadoKey] ||
+    'bg-gray-100 dark:bg-gray-800';
+
   const estadoStyleText =
-    bienEstadosTexto[estadoKey] || bienEstadosTexto.default;
+    bienEstadosTexto[estadoKey] ||
+    localEstadoText[estadoKey] ||
+    'text-gray-600 dark:text-gray-300';
 
-  // Colores para el punto (dot)
+  // 3. Colores para el punto (dot) - Aseguramos 'en tránsito'
   const estadoDotColor =
     {
       activo: 'bg-green-500',
       mantenimiento: 'bg-yellow-500',
       inactivo: 'bg-red-500',
       transaccion: 'bg-gray-500',
+      extraviado: 'bg-red-500',
+      extravíado: 'bg-red-500',
+      'en transito': 'bg-yellow-500', // <--- Caso sin acento
+      'en tránsito': 'bg-yellow-500', // <--- Caso con acento (API)
       baja: 'bg-gray-500',
     }[estadoKey] || 'bg-gray-400';
 
-  // --- LÓGICA PARA EL BORDE ---
+  // 4. Colores para el Borde - Aseguramos 'en tránsito'
   const borderStatusColor =
     {
       activo: 'border-green-200 dark:border-green-900',
       mantenimiento: 'border-yellow-200 dark:border-yellow-900',
       inactivo: 'border-red-200 dark:border-red-900',
       transaccion: 'border-gray-200 dark:border-gray-900',
+      extraviado: 'border-red-200 dark:border-red-900',
+      extravíado: 'border-red-200 dark:border-red-900',
+      'en transito': 'border-yellow-200 dark:border-yellow-900', // <--- Caso sin acento
+      'en tránsito': 'border-yellow-200 dark:border-yellow-900', // <--- Caso con acento
       baja: 'border-gray-200 dark:border-gray-900',
     }[estadoKey] || 'border-gray-200 dark:border-gray-900';
 
@@ -600,79 +660,6 @@ export function Gest_InfoResguardante({
     null,
   );
 
-  // // --- 2. FUNCIÓN PARA CARGAR BIENES (PAGINADA) ---
-  // const loadBienes = useCallback(
-  //   async (page: number) => {
-  //     const credenciales: Access_token = { access_token };
-
-  //     if (page === 1) {
-  //       // Si es carga inicial o refresh, no mostramos loading de footer
-  //     } else {
-  //       setIsFetchingMore(true);
-  //     }
-
-  //     try {
-  //       console.log(`Cargando bienes página ${page}...`);
-  //       const respuesta: BienesResguardanteResponseVerResguardos =
-  //         await getResguardos_Resguardante(credenciales, id_resguardante, page);
-
-  //       if (page === 1) {
-  //         setBienesList(respuesta.data);
-  //       } else {
-  //         // Concatenar nuevos datos
-  //         setBienesList((prev) => [...prev, ...respuesta.data]);
-  //       }
-
-  //       // Actualizar punteros
-  //       setCurrentPage(respuesta.current_page);
-  //       setLastPage(respuesta.last_page);
-  //     } catch (error) {
-  //       console.error('Error cargando bienes:', error);
-  //       if (page > 1) {
-  //         setAlertInfo({
-  //           visible: true,
-  //           title: 'Error de Conexión',
-  //           message: 'No se pudieron cargar más bienes.',
-  //         });
-  //       }
-  //     } finally {
-  //       setIsFetchingMore(false);
-  //     }
-  //   },
-  //   [access_token, id_resguardante],
-  // );
-
-  // // --- 1. CARGA INICIAL (PERFIL + PRIMERA PÁGINA) ---
-  // const loadInitialData = useCallback(async () => {
-  //   setIsLoading(true);
-  //   try {
-  //     const credenciales: Access_token = { access_token };
-
-  //     // 1. Obtener Info del Resguardante (Perfil) - No paginado
-  //     const infoResguardante = await getResguardante(
-  //       credenciales,
-  //       id_resguardante,
-  //     );
-  //     setMiResguardante(infoResguardante);
-
-  //     // 2. Obtener Bienes (Página 1)
-  //     await loadBienes(1);
-  //   } catch (error) {
-  //     console.error(error);
-  //     setAlertInfo({
-  //       visible: true,
-  //       title: 'Error',
-  //       message: 'No se pudo cargar la información inicial.',
-  //     });
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // }, [access_token, id_resguardante, loadBienes]); // CORRECCIÓN: Agregamos loadBienes aquí
-
-  // useEffect(() => {
-  //   loadInitialData();
-  // }, [loadInitialData]);
-
   // --- FUNCIÓN PARA CARGAR BIENES ---
   const loadBienes = useCallback(
     async (page: number, isActive: boolean = true) => {
@@ -690,6 +677,10 @@ export function Gest_InfoResguardante({
         if (isActive) {
           if (page === 1) {
             setBienesList(respuesta.data);
+            console.log(
+              'Bienes cargados con éxito' +
+                JSON.stringify(respuesta.data, null, 2),
+            );
           } else {
             setBienesList((prev) => [...prev, ...respuesta.data]);
           }
@@ -763,6 +754,37 @@ export function Gest_InfoResguardante({
     if (!isLoading && !isFetchingMore && currentPage < lastPage) {
       loadBienes(currentPage + 1);
     }
+  };
+
+  // --- 4. FUNCIÓN PARA GENERAR PDF ---
+  const handleGeneratePDF = async () => {
+    if (!miResguardante || bienesList.length === 0) {
+      setAlertInfo({
+        visible: true,
+        title: 'Sin Datos',
+        message: 'No hay información suficiente para generar el reporte.',
+      });
+      return;
+    }
+
+    // ADAPTADOR: Creamos un objeto que simula ser "User" (que es lo que espera el generador)
+    // usando los datos de "ResguardanteInfo"
+    const userAdaptado = {
+      ...miResguardante,
+      // El generador probablemente usa 'usuario_nombre' para el título
+      usuario_nombre: `${miResguardante.res_nombre} ${miResguardante.res_apellidos}`,
+      // Pasamos el resto por si acaso
+      nombre: miResguardante.res_nombre,
+      apellidos: miResguardante.res_apellidos,
+      email: miResguardante.res_correo,
+    };
+
+    // Llamamos a tu componente existente
+    await generarYCompartirValeResguardo(
+      userAdaptado as any, // "as any" para evitar conflicto estricto de tipos, ya que adaptamos manualmente
+      bienesList,
+      'RESGUARDO',
+    );
   };
 
   const renderFooter = () => {
@@ -855,6 +877,7 @@ export function Gest_InfoResguardante({
                   <ResguardanteHeader
                     itemResguardante={miResguardante}
                     dataBienes={bienesList} // Pasamos la lista acumulada para stats
+                    onPdfGenerate={handleGeneratePDF} // <--- Pasamos el handler
                   />
                 )}
               </>

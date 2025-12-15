@@ -119,8 +119,8 @@ const generateHtml = (
         <td style="text-align: center;">${index + 1}</td>
         <td style="text-align: center;">${bien.bien_codigo || 'S/N'}</td>
         <td style="text-align: left;">${descripcionCompleta}</td>
-        <td style="text-align: right;">$${precio}</td>
-        <td style="text-align: center;">${bien.bien_serie || 'S/N'}</td>
+        <td style="text-align: right;">${precio === '0.00' ? '' : '$' + { precio }}</td>
+        <td style="text-align: center;">${bien.bien_serie === 'SIN SERIE' ? '' : bien.bien_serie}</td>
       </tr>
     `;
     })
@@ -297,10 +297,6 @@ const generateHtml = (
 
       <div class="footer-total">
         TOTAL DE BIENES RESGUARDADOS: ${bienes.length}
-      </div>
-
-      <div class="page-footer">
-        RAFH - Sistema de Gestión de Activos
       </div>
 
     </body>
