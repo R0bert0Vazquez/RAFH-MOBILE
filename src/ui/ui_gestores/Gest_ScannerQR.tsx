@@ -23,6 +23,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList, Access_token } from '@/src/models/types';
 
 import { Select_Oficina_DropDown } from '@/src/components/Select_Oficina_DropDownPicker';
+import { Select_Office_In_Cascade } from '@/src/components/Select_Office_In_Cascade';
 
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -810,12 +811,32 @@ export function Gest_ScannerQR({ access_token }: { access_token: string }) {
         onClose={handleCloseAlert}
       />
 
-      <Select_Oficina_DropDown
+      {/* <Select_Oficina_DropDown
         visible={officeModalVisible}
         onClose={() => setOfficeModalVisible(false)}
         access_token={access_token}
         onSelect={(oficina) => {
           setSelectedOffice(oficina);
+        }}
+      /> */}
+
+      <Select_Office_In_Cascade
+        visible={officeModalVisible}
+        onClose={() => setOfficeModalVisible(false)}
+        access_token={access_token}
+        onSelect={(oficina) => {
+          setSelectedOffice(oficina);
+        }}
+        onSuccess={() => {
+          // console.log('Oficinas cargadas correctamente');
+        }}
+        onError={(msg) => {
+          setOfficeModalVisible(false);
+          setAlertInfo({
+            visible: true,
+            title: 'Error de carga',
+            message: msg,
+          });
         }}
       />
     </StyleGlobal>

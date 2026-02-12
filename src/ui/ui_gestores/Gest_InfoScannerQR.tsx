@@ -46,6 +46,7 @@ import { useInfoScannerQRController } from '@/src/controllers/controllers_gestor
 
 import { iconMap } from '@/src/components/dataBienes';
 import { Select_Oficina_DropDown } from '@/src/components/Select_Oficina_DropDownPicker';
+import { Select_Office_In_Cascade } from '@/src/components/Select_Office_In_Cascade';
 
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
@@ -2597,7 +2598,7 @@ export function Gest_InfoScannerQR() {
         onClose={() => setAlertInfo({ ...alertInfo, visible: false })}
       />
 
-      <Select_Oficina_DropDown
+      {/* <Select_Oficina_DropDown
         visible={targetOfficeModalVisible}
         onClose={() => {
           setTargetOfficeModalVisible(false);
@@ -2612,6 +2613,35 @@ export function Gest_InfoScannerQR() {
         access_token={access_token}
         onSelect={(oficina) => {
           handleOfficeSelected(oficina);
+        }}
+      /> */}
+
+      <Select_Office_In_Cascade
+        visible={targetOfficeModalVisible}
+        onClose={() => {
+          setTargetOfficeModalVisible(false);
+          if (selectedBien) {
+            if (officeSelectionMode === 'MOVE') {
+              setRequestModalVisible(true);
+            } else if (officeSelectionMode === 'TRANSIT_MISSING') {
+              setChangeStatusModalVisible(true);
+            }
+          }
+        }}
+        access_token={access_token}
+        onSelect={(oficina) => {
+          handleOfficeSelected(oficina);
+        }}
+        onSuccess={() => {
+          // console.log('Oficinas cargadas correctamente');
+        }}
+        onError={(msg) => {
+          setTargetOfficeModalVisible(false);
+          setAlertInfo({
+            visible: true,
+            title: 'Error de carga',
+            message: msg,
+          });
         }}
       />
     </StyleGlobal>

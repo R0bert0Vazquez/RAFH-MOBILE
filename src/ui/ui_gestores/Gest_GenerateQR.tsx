@@ -33,6 +33,7 @@ import {
 import { useGenerateQRController } from '@/src/controllers/controllers_gestor/generateQR.controller';
 
 import { Select_Oficina_DropDown } from '@/src/components/Select_Oficina_DropDownPicker';
+import { Select_Office_In_Cascade } from '@/src/components/Select_Office_In_Cascade';
 
 if (
   Platform.OS === 'android' &&
@@ -1028,12 +1029,32 @@ export function Gest_GenerateQR({ access_token }: { access_token: string }) {
         isEditing={editingIndex !== null}
       />
 
-      <Select_Oficina_DropDown
+      {/* <Select_Oficina_DropDown
         visible={officeModalVisible}
         onClose={() => setOfficeModalVisible(false)}
         access_token={access_token}
         onSelect={(oficina) => {
           setSelectedOffice(oficina);
+        }}
+      /> */}
+
+      <Select_Office_In_Cascade
+        visible={officeModalVisible}
+        onClose={() => setOfficeModalVisible(false)}
+        access_token={access_token}
+        onSelect={(oficina) => {
+          setSelectedOffice(oficina);
+        }}
+        onSuccess={() => {
+          // console.log('Oficinas cargadas correctamente');
+        }}
+        onError={(msg) => {
+          setOfficeModalVisible(false);
+          setAlertInfo({
+            visible: true,
+            title: 'Error de carga',
+            message: msg,
+          });
         }}
       />
 
